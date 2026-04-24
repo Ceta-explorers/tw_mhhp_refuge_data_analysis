@@ -25,16 +25,22 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 
-import csv
-import math
-
-
 matplotlib.rcParams['font.family'] = 'Times New Roman'
-root_path ='C:/Users/cetae/GBIF_IPT/Survey_Data_Mianhua_and_Huaping_Islets_Wildlife_Refuge'
+
+
+
+print(f" Current Working Directory (CWD) : {os.getcwd()}")
+root_path0 = input("Input the complete path of the folder 'Survey_Data_Mianhua_and_Huaping_Islets_Wildlife_Refuge' if the CWD is not this \n or Enter:")  or str(os.getcwd()) 
+root_path = root_path0.strip()
+if (root_path[-1] == '/'):
+    root_path = root_path[:-1]
+
+#example
+#root_path = 'C:/Users/cetae/GBIF_IPT/Survey_Data_Mianhua_and_Huaping_Islets_Wildlife_Refuge'
+
 
 
 input_path = os.path.join(root_path,'mhhp_inputs/')
-
 output_path = os.path.join(root_path, 'mhhp_outputs/')
 output_path_csv = os.path.join(output_path, 'csv/')
 output_path_sac = os.path.join(output_path, 'sac/')
