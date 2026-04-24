@@ -1,0 +1,12 @@
+﻿taxonID,occurrenceID,eventDate,year,month,day,eventTime,basisOfRecord,continent,country,locality,samplingProtocol,scientificName,taxonRank,vernacularName,individualCount,georeferenceVerificationStatus,geodeticDatum,decimalLongitude,decimalLatitude,coordinatePrecision,coordinateUncertaintyInMeters,recordedBy,sex,lifeStage,reproductiveCondition,behavior,vitality,occurrenceStatus,occurrenceRemarks,associatedMedia,associatedReferences,dynamicProperties,verbatimEventDate
+KL_Algae_0000001,2020-00-00_藻類調查_0001,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Caulerpa racemosa,species,總狀蕨藻,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000002,2020-00-00_藻類調查_0002,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Porphyra,genus,紫菜屬,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000003,2020-00-00_藻類調查_0003,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Asparagopsis taxiformis,species,蘆筍藻,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000004,2020-00-00_藻類調查_0004,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Mastophora rosea,species,寬珊藻,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000005,2020-00-00_藻類調查_0005,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Dudresnaya japonica,species,日本杜蠕藻,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000006,2020-00-00_藻類調查_0006,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Chondrus,genus,角叉菜屬,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000007,2020-00-00_藻類調查_0007,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Halymenia floresia,species,海膜,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000008,2020-00-00_藻類調查_0008,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Hypnea pannosa,species,巢沙菜,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000009,2020-00-00_藻類調查_0009,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Valoniopsis pachynema,species,指枝藻,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000010,2020-00-00_藻類調查_0010,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Ulva pertusa,species,孔石蓴,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
+KL_Algae_0000011,2020-00-00_藻類調查_0011,2020,2020,,,,HumanObservation,Asia,Taiwan,棉花嶼,,Dictyosphaeria cavernosa,species,網球藻,,,,,,,,社團法人基隆市野鳥學會,,,,,,,,,,,2020-00-00
