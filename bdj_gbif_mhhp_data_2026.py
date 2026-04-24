@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Apr 20 16:43:15 2026
+The Survey Data of Mianhua and Huaping Islets Wildlife Refuge
 
-@author: cetae
-"""
+Copyright (c) 2026 Jui-Wen Chang and Ceta explorers Co., Ltd.
+Licensed under the CC BY 4.0 License.
 
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov 18 18:03:50 2024
+@author: Jui-Wen Chang (Ceta explorers Co., Ltd)
 
-@author: cetae
 """
 
 
