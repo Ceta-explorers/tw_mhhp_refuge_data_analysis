@@ -480,7 +480,7 @@ plt.show()
 
  
 #%%  
-# #%% 2-2. Count the boolean of survey targets in each year (0 | 1).
+# #%% 4-1. Count the boolean of survey targets in each year (0 | 1).
 
 
 
