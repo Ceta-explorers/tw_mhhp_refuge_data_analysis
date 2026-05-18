@@ -40,17 +40,24 @@ if (root_path[-1] == '/'):
 input_path = os.path.join(root_path,'mhhp_inputs/')
 output_path = os.path.join(root_path, 'mhhp_outputs/')
 output_path_csv = os.path.join(output_path, 'csv/')
-output_path_sac = os.path.join(output_path, 'sac/')
+output_path_sac = os.path.join(output_path, 'species_accumulation_curve/')
+output_path_counts = os.path.join(output_path, 'species_counts_yearly/')
 
 
 if not os.path.exists(output_path):
     os.mkdir(output_path)
 
-if not os.path.exists(output_path_csv):
-    os.mkdir(output_path_csv)
+# if not os.path.exists(output_path_csv):
+#     os.mkdir(output_path_csv)
 
 if not os.path.exists(output_path_sac):
     os.mkdir(output_path_sac)
+
+
+if not os.path.exists(output_path_counts):
+    os.mkdir(output_path_counts)
+
+
 
 
 #%% I.Check data integrity
@@ -291,17 +298,17 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         
         
 # Save the Table: yearly_species_counts_8_groups    
-data_yearly_taxon_counts.to_csv(output_path_csv + 'mhhp_yearly_species_counts_8_groups.csv',sep=',',
+data_yearly_taxon_counts.to_csv(output_path_counts + 'mhhp_yearly_species_counts_8_groups.csv',sep=',',
                                 index=True, index_label='Year', encoding='utf_8')
 
 
 # Save the Table: yearly_species_accumulation_curves_8_groups
-data_species_cumulative0.to_csv(output_path_csv +'mhhp_yearly_species_accumulation_8_groups.csv',sep=',',
+data_species_cumulative0.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups.csv',sep=',',
                                 index=True, index_label='Year', encoding='utf_8')
 
 
 # Save the Table: yearly_species_counts_increments_8_groups  
-data_species_increment0.to_csv(output_path_csv +'mhhp_yearly_species_counts_increments_8_groups.csv',sep=',',
+data_species_increment0.to_csv(output_path_sac +'mhhp_yearly_species_increments_8_groups.csv',sep=',',
                                index=True, index_label='Year', encoding='utf_8')
 
 
@@ -319,7 +326,7 @@ data_year_category_group = data_year_category_group.astype('int64')
 data_year_category_group['sum'] = data_year_category_group.sum(axis=1).values
 drop_index1=list(data_year_category_group[data_year_category_group['sum']==0].index)
 data_year_category_group.drop(drop_index1, inplace=True)
-data_year_category_group.to_csv(output_path_csv +'mhhp_yearly_survey_targets_boolean_8_groups.csv',
+data_year_category_group.to_csv(output_path_counts +'mhhp_yearly_survey_targets_boolean_8_groups.csv',
                                 sep=',',index=True, index_label='Year', encoding='utf_8')
 
 
@@ -364,7 +371,7 @@ for category1 in [
     
     #set the legend
     bar0.set_label(category1)
-    axis0.legend(prop={"size":25})
+    axis0.legend(prop = {"size":25})
 
     
     #Set the Y interval to integer.
@@ -375,27 +382,31 @@ for category1 in [
     axis0.set_xlabel('Year', fontsize=20)
     axis0.set_ylabel(ylabel_name, fontsize=20)
     plt.tight_layout()
-    fig0.savefig(output_path_csv + f'mhhp_annual_species_counts_{category1}.png')
+    fig0.savefig(output_path_counts + f'mhhp_yearly_species_counts_{category1}.png')
     
 
 
 #%% 3-2.Export 1 figure of annual_species_counts_8_subplots
 
 
-fig1,axis1=plt.subplots(4,2, dpi=300, figsize=(16,16))
+fig_row_counts = 3
+
+
+fig1,axis1=plt.subplots(3,2, dpi=300, figsize=(16,16))
 turn=0
 for category1 in [
- 'Algae',
+# 'Algae',
  'Avian',
- 'Benthic Invertebrate',
- 'Cetacean',
  'Fish',
+ 'Insect',
+ 'Cetacean',
+ 'Benthic Invertebrate',
  'Plant',
- 'Reptile',
- 'Insect']:
+# 'Reptile'
+ ]:
     
-    row1=np.mod(turn,4)
-    column1=int(np.floor(turn/4))
+    row1=np.mod( turn, fig_row_counts)
+    column1=int( np.floor(turn/fig_row_counts) )
     data_yearly_counts_fig[category1]=data_yearly_counts_fig[category1].astype('Int64')
     
     #line1,=axis1[row1,column1].plot(data_yearly_counts_fig['year'], data_yearly_counts_fig[category1], color='black')
@@ -418,7 +429,7 @@ for category1 in [
     turn=turn+1
 
 plt.tight_layout()
-fig1.savefig(output_path_csv + 'mhhp_annual_species_counts_8subplots.png')
+fig1.savefig(output_path_counts + 'mhhp_yearly_species_counts_6subplots.png')
 plt.show()
 
 
@@ -447,14 +458,15 @@ data_species_cumulative_fig = data_species_increment0.fillna(0).cumsum().astype(
 
 fig2, axis2=plt.subplots(1,1, dpi=300, figsize=(6, 4))
 for category2 in [
- 'Algae',
+# 'Algae',
  'Avian',
- 'Benthic Invertebrate',
- 'Cetacean',
  'Fish',
+ 'Insect',
+ 'Cetacean',
+ 'Benthic Invertebrate',
  'Plant',
- 'Reptile',
- 'Insect']:
+# 'Reptile'
+ ]:
 
     
     line2,= axis2.plot(data_species_cumulative_fig.index, data_species_cumulative_fig[category2],
@@ -473,7 +485,7 @@ for category2 in [
 #axis2.legend(title='8 Groups',title_fontsize=12 ,prop={'size':11})
 axis2.legend(frameon=False, prop={'size':11})
 plt.tight_layout()
-fig2.savefig(output_path_sac + 'mhhp_yearly_species_accumulation_curves_8_groups.png')
+fig2.savefig(output_path_sac + 'mhhp_yearly_species_accumulation_curves_6_groups.png')
 
 plt.show()
 
