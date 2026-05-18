@@ -10,6 +10,38 @@ Licensed under the CC BY 4.0 License.
 """
 
 
+
+#% conda install -c rpy2
+#% conda install -c r-vegan
+
+
+
+
+# =============================================================================
+# 
+# 
+# Oksanen, J., Simpson, G. L., Blanchet, F. G., Kindt, R., Legendre, P., Minchin, P. R., ... & Wagner, H. (2024).
+# vegan: Community Ecology Package. R package version 2.6-4. https://CRAN.R-project.org/package=vegan
+# 
+#
+#
+#  Sample-based 與 Individual-based
+#  Gotelli, N. J., & Colwell, R. K. (2001). Quantifying biodiversity: 
+#  procedures and pitfalls in the measurement and comparison of species richness. Ecology Letters, 4(4), 379-391.
+# 
+#
+# 針對 method = "exact" (基於樣本的精確稀疏化公式) 的數學證明：
+# Chiarucci, A., Bacaro, G., Rocchini, D., & Fattorini, L. (2008). 
+# Discovering and rediscovering the sample-based rarefaction formula in the ecological literature. 
+# Community Ecology, 9(1), 121-123.
+#
+#
+#
+# =============================================================================
+
+
+
+
 #%% Import Packages, Input files
 
 import os
@@ -20,6 +52,21 @@ import chardet
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+
+
+# 1. 強制設定 R_HOME 為你 Conda 虛擬環境中的 R 資料夾
+# (注意前面的 r 不能省略，這能避免 Windows 反斜線 \ 造成的路徑辨識錯誤)
+os.environ['R_HOME'] = r'C:\Users\cetae\anaconda3\envs\env_geo\Lib\R'
+
+# 2. 清除可能干擾的 R_USER 變數 (如果有設定的話，讓它重置)
+if 'R_USER' in os.environ:
+    del os.environ['R_USER']
+
+
+# 在 Python 裡面直接召喚 R 的 vegan！
+import rpy2.robjects.packages as rpackages
+from rpy2.robjects import pandas2ri
+
 
 
 matplotlib.rcParams['font.family'] = 'Times New Roman'
@@ -206,9 +253,126 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         data0['taxonRank'] = data0['taxonRank'].str.strip().str.lower()
         filter_species= np.logical_or(data0['taxonRank']=='species', data0['taxonRank']=='subspecies')
         len(data0[filter_species])/len(data0)
-        data1 = data0[filter_species]
+        data1 = data0[filter_species].copy()
+        
+        
+        
+        
+        
+        
+        #Sample-based accumulation curve ()
+        data1_community_quan = pd.crosstab(data1['year'],data1['name_species'])
+        data1_community_boolean = (data1_community_quan>0).astype('int')
 
+
+        # 1).Convert from pandas to R
+        pandas2ri.activate()
+        
+        # 2). import 'vegan' package
+        vegan = rpackages.importr('vegan')
+        stats = rpackages.importr('stats')
+        
+        
+        # 3). species accumulation curve_random/exact
+        if len(data1_community_boolean)>1:
+            sp1 = vegan.specaccum(data1_community_boolean, method= 'random')
+            sp2 = vegan.specaccum(data1_community_boolean, method= 'collector')
+            sp3 = vegan.specaccum(data1_community_boolean, method= 'exact')
             
+        #plot(sp1, ci.type="poly", col="blue", lwd=2, ci.lty=0, ci.col="lightblue")
+        
+        
+        # 步驟 4：把 R 的結果萃取出來，轉成 Python 的 Numpy 陣列
+        # ==========================================
+        # 使用 .rx2() 抓出特定元素，並用 np.array() 把它們變成純數值
+        x_sites1 = np.array(sp1.rx2('sites'))
+        y_richness1 = np.array(sp1.rx2('richness'))
+        y_sd1 = np.array(sp1.rx2('sd'))
+
+        x_sites2 = np.array(sp2.rx2('sites'))
+        y_richness2 = np.array(sp2.rx2('richness'))
+        y_sd2 = np.array(sp2.rx2('sd'))        
+        
+        
+        x_sites3 = np.array(sp3.rx2('sites'))
+        y_richness3 = np.array(sp3.rx2('richness'))
+        y_sd3 = np.array(sp3.rx2('sd'))
+        
+        
+        
+
+        # ==========================================
+        # 步驟 5：變成 Pandas DataFrame 方便檢視與輸出
+        # ==========================================
+        sac_results = pd.DataFrame({
+            'Years': x_sites1,
+            'Richness': y_richness1,
+            'SD': y_sd1
+        })
+        
+        print("==== 物種累積曲線計算結果 ====")
+        print(sac_results.head()) # 先偷看前五筆資料
+        
+        # ==========================================
+        # 步驟 6：使用 Matplotlib 畫出帶有標準差的 SAC 圖
+        # ==========================================
+
+        figr, axr = plt.subplots(1,1,figsize=(10, 6))
+        
+        # plot curve
+        axr.plot(x_sites1, y_richness1, color='#1f77b4', marker='o', linewidth=2, label='Species Accumulation with Permutations.')
+        axr.plot(x_sites2, y_richness2, color='black', marker='o', linewidth=2, label='Species Accumulation in Survey Order')
+        axr.plot(x_sites3, y_richness3, color='black', marker='o', linewidth=2, label='Species Accumulation in Exact Mode.')
+        
+        
+        mod1 = vegan.fitspecaccum(sp3, "lomolino")
+        
+        mod2 = vegan.fitspecaccum(sp3, "asymp")
+        
+        mod3 = vegan.fitspecaccum(sp3, "michaelis-menten")
+        
+        #stats.sapply(mods1.models, AIC)
+        
+        coeffs1 = stats.coef(mod1)
+        coeffs2 = stats.coef(mod2)
+        coeffs3 = stats.coef(mod3)
+        tuple(coeffs1.names)
+        
+        
+        # plot confidence range
+        # alpha=0.2 代表設定陰影的透明度為 20%
+        axr.fill_between(x_sites1, 
+                         y_richness1 - y_sd1, 
+                         y_richness1 + y_sd1, 
+                         color='#1f77b4', alpha=0.2, label='± 1 Standard Deviation')
+        
+        
+        axr.fill_between(x_sites3, 
+                          y_richness3 - y_sd3, 
+                          y_richness3 + y_sd3, 
+                          color='red', alpha=0.2, label='± 1 Standard Deviation')
+        
+        # 設定圖表的標題與軸標籤
+        axr.set_title(f'The Species Accumulation Curve of {content[file_id][2:-18]}', fontsize=14)
+        axr.set_xlabel('Number of Sampling Years', fontsize=12)
+        axr.set_ylabel('Cumulative Counts of Species', fontsize=12)
+        
+        # 強制 X 軸顯示整數 (因為年份不能是小數)
+        plt.gca().xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+        
+        # 顯示網格線與圖例
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.legend(loc='lower right')
+        
+        # 將圖表顯示出來！
+        plt.show()
+                
+
+
+
+
+
+
 
         #1. Annual Species Counts
         data_taxon_yearly = data1.groupby(['year'])['name_species'].nunique(dropna=True).to_frame()
