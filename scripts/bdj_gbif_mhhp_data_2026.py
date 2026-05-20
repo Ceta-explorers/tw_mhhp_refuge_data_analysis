@@ -204,6 +204,12 @@ a2=set(data_taxonID['taxonID'].values)
 data_yearly_taxon_counts = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
 data_yearly_occur_counts = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
 data_species_cumulative0 = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
+
+
+#data_species_cumulative0 = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
+data_species_cumulative0_raw = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
+data_species_cumulative0_exact = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
+
 data_species_increment0 = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
 
 
@@ -292,11 +298,10 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         
         
         #3-2_Python. Yearly Species Accumulation Curve (SAC)        
-        #species_cumulative = {y : 0 for y in range(year_min, int(year_max + 1), 1) }
         
         taxon_unique_years = np.sort(data1['year'].dropna().unique())
-        species_cumulative0 = {y : 0 for y in taxon_unique_years }  #累積年份的物種數量
-        taxon_cumulative = data1[['name_species','year']].dropna().drop_duplicates()   
+
+        
         
         
         
@@ -337,17 +342,24 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 
 
             # save results to Dataframe.
-            
-            sac_results = pd.DataFrame({
-                'Years': x_sites1,
-                'Richness_rand': y_richness1,
+            sac_results = {
+                'Years': taxon_unique_years,
+                'NumYears': x_sites1,
                 'Richness_coll': y_richness2,
                 'Richness_exac': y_richness3,
-                'SD_rand': y_sd1,
                 'SD_exact': y_sd3
-            })
+            }
             
-            print(sac_results.head()) # 先偷看前五筆資料
+            
+            species_cumulative0_raw = {}
+            for yea, val in zip(taxon_unique_years, y_richness2) :
+                species_cumulative0_raw[yea] = val
+                
+            
+            species_cumulative0_exact = {}
+            for yea, val in zip(taxon_unique_years, y_richness3) :
+                species_cumulative0_exact[yea] = val            
+            
             
             
             # ==========================================
@@ -567,7 +579,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             # 6：Plot smoothe SAC with Matplotlib
             # ==========================================            
     
-            figr, axr = plt.subplots(1,1, figsize=(10, 6), dpi=300)
+            figr, axr = plt.subplots(1,1, figsize=(9.6, 6.4), dpi=500)
             
             # plot curve in Random Method
             # axr.plot(x_sites1, y_richness1, color='brown', marker='o', linewidth=2, label='Species Accumulation with Permutations.')
@@ -577,7 +589,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             axr.plot(x_sites2, y_richness2, color='black', marker='o', linewidth=3, label='Species Accumulation in Survey Order')
             
             # plot curve in Exact Method
-            axr.plot(x_sites3, y_richness3, color='red', alpha=0.4, marker='s', linewidth=4, label='Species Accumulation of Expected Values.') 
+            axr.plot(x_sites3, y_richness3, color='red', alpha=0.4, marker='s', linewidth=4, label='Species Accumulation of Expected Values') 
             
             
             
@@ -618,9 +630,12 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             
             #axr.xaxis.set_major_locator(MaxNLocator(integer = True))
             axr.set_xticks(x_sites3)
-            axr.set_xticklabels(x_sites3, fontsize=15)
-            axr.set_title(f'The Species Accumulation Curve of {content[file_id][2:-18]}', fontsize=14, pad= 20)
-            axr.set_xlabel('Number of Sampling Years', fontsize=12)
+            axr.set_xticklabels([str(int(yr)) for yr in taxon_unique_years], rotation= 50, fontsize=15)
+            
+            
+            #axr.set_title(f'The Species Accumulation Curve of {content[file_id][2:-18]}', fontsize=14, pad= 20)
+            axr.set_xlabel('Actual Survey Year', fontsize=14, labelpad= 2)
+
             axr.set_ylabel(f'Cumulative Species Counts of {content[file_id][2:-18]}', fontsize=15)
             
             
@@ -633,9 +648,10 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             axr2.set_xticks(x_sites2)            
             
             # Step 3: Replace the tick numbers with the actual string of the survey years
-            axr2.set_xticklabels([str(int(yr)) for yr in taxon_unique_years], rotation= 50, fontsize=15)
+            axr2.set_xticklabels(x_sites3, rotation= 0, fontsize=15)
+            axr2.set_xlabel('Number of Sampling Years', fontsize=14, labelpad=6)
             # Configure top axis (axr2)
-            axr2.set_xlabel('Actual Survey Year', fontsize=12, labelpad= 2)
+            
             
             
             # set axis as integer.
@@ -643,57 +659,74 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             plt.gca().yaxis.set_major_locator(plt.MaxNLocator(integer=True))
             
             # set legend
-            plt.grid(True, linestyle='--', alpha=0.6)
+            #plt.grid(True, linestyle='--', alpha=0.6)
             axr.tick_params(axis='y', labelsize=15)
-            axr.legend(loc='lower right')
+            #axr.legend(title=f'{content[file_id][2:-18]}', loc='lower right' , fontsize=9 )
+            if 'Avian' in f'{content[file_id][2:-18]}':
+                
+                axr.legend(title=f'{content[file_id][2:-18]}', loc='lower right' ,title_fontsize= 25 , prop={'size':17})
+                
+            else:
+                axr.legend([f'{content[file_id][2:-18]}'], loc='lower right' , fontsize= 25 )
+                
             plt.show()
             plt.tight_layout()
             
             figr.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_complete_{content[file_id][2:-18]}.png')     
             
-            
+            data_species_cumulative0_exact[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0_exact, orient='index', columns=[f'{content[file_id][2:-18]}'])  
+            data_species_cumulative0_raw[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0_raw , orient='index',columns=[f'{content[file_id][2:-18]}'])
+
+    
 
 
-
-        #3-2_python: 計算當年份之前(包含)的物種數量
-        
-        taxon_sample_yearly_times = {} #單一年份的物種數量
-        #beforeyear=2025
-        
-        for beforeyear in taxon_unique_years:   #np.array(data1['year'].unique())
-            # taxon_beforeyear=taxon_cumulative.loc[taxon_cumulative['year']<=beforeyear,'name_species'].value_counts()
-            # len(taxon_beforeyear)      
-            species_cumulative0[beforeyear] = taxon_cumulative.loc[taxon_cumulative['year'] <= beforeyear,'name_species'].nunique()         #累積年份的物種數量
-            taxon_sample_yearly_times[beforeyear] = taxon_cumulative.loc[taxon_cumulative['year'] == beforeyear,'name_species'].nunique()    #單一年份的物種數量
-
-        #計算累積曲線的遞增關係
-        species_increment0={}
-        for i, y in enumerate(taxon_unique_years) :
-            if i==0:
-                species_increment0[y] = species_cumulative0[y]
-            elif i!=0 :
-                year_previous = taxon_unique_years[i-1]
-                species_increment0[y] = species_cumulative0[y] - species_cumulative0[year_previous]
-
-
-        data_species_sample_year_cum = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{content[file_id][2:-18]}'])
-        data_species_sample_year_incr = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
-        data_species_sample_year_cum.to_csv(output_path_sac + f'mhhp_yearly_species_accumulation_curve_{content[file_id][2:-18]}.csv', 
-                                               sep=',', index=True, index_label='Year', encoding='utf_8')
-        
-        
-        data_species_sample_year_cum.index = data_species_sample_year_cum.index.astype("str")
-        
-        
-        
-        
-        # From year_min To year_max (1994-2025)
-        data_species_cumulative0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{content[file_id][2:-18]}'])
-        data_species_increment0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
-        # data_species_cumulative0.plot()
-        
-        
+    
 # =============================================================================
+#     #3-2_python: calculate number of species before "beforeyear" of 8 Groups
+#         
+#         taxon_cumulative = data1[['name_species','year']].dropna().drop_duplicates()   
+#         
+#         species_cumulative0 = {y : 0 for y in taxon_unique_years }  
+#         taxon_sample_yearly_times = {} # Number of species in one year
+#         #beforeyear=2025
+#         
+#         for beforeyear in taxon_unique_years:   #np.array(data1['year'].unique())
+#             # taxon_beforeyear=taxon_cumulative.loc[taxon_cumulative['year']<=beforeyear,'name_species'].value_counts()
+#             # len(taxon_beforeyear)      
+#             species_cumulative0[beforeyear] = taxon_cumulative.loc[taxon_cumulative['year'] <= beforeyear,'name_species'].nunique()         # number of species before "beforeyear"
+#             taxon_sample_yearly_times[beforeyear] = taxon_cumulative.loc[taxon_cumulative['year'] == beforeyear,'name_species'].nunique()    # number of species in one year
+# 
+# 
+# 
+#         #3-3: Calculate the increment in SAC.
+#         species_increment0={}
+#         for i, y in enumerate(taxon_unique_years) :
+#             if i==0:
+#                 species_increment0[y] = species_cumulative0[y]
+#             elif i!=0 :
+#                 year_previous = taxon_unique_years[i-1]
+#                 species_increment0[y] = species_cumulative0[y] - species_cumulative0[year_previous]
+# 
+# 
+#         data_species_sample_year_cum = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{content[file_id][2:-18]}'])
+#         data_species_sample_year_incr = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
+#         
+#         data_species_sample_year_cum.to_csv(output_path_sac + f'mhhp_yearly_species_accumulation_curve_{content[file_id][2:-18]}.csv', 
+#                                                 sep=',', index=True, index_label='Year', encoding='utf_8')
+#         
+#         
+#         data_species_sample_year_cum.index = data_species_sample_year_cum.index.astype("str")
+#         
+#         
+#         
+#         
+#         # From year_min To year_max (1994-2025)
+#         data_species_cumulative0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{content[file_id][2:-18]}'])
+#         data_species_increment0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
+#         
+#     
+# 
+#     
 #         # Plot: yearly_species_accumulation_curve in Survey Year Order
 #         size_point=20 #the size of the point
 #         fig2,ax2 = plt.subplots(1,1, figsize=(6,4), dpi=300)
@@ -717,6 +750,8 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 
 
 
+
+
         
         #I.計算這個種類的生物在整年份的目擊分布>>使用所有的taxon occurrences(data0)
         data_year = data0.groupby('year')['occurrenceID'].size().to_frame(name=f'{content[file_id][2:-18]}')
@@ -728,7 +763,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         data_yearly_occur_counts.loc[data_year.index, f'{content[file_id][2:-18]}']=data_year.loc[data_year.index, f'{content[file_id][2:-18]}'].values
         
         # index is not years: Inset into yearly tables.
-        #data_yearly_occur_counts.loc[data_year['year'].values, f'{content[file_id][2:-18]}']=data_year.loc[data_year['year']==data_year['year'].values, f'{content[file_id][2:-18]}'].values
+        #data_yearly_occur_counts.loc[data_year['year'].values, f'{content[file_id][2:-18]}'] = data_year.loc[data_year['year']==data_year['year'].values, f'{content[file_id][2:-18]}'].values
         
 
     else:
@@ -741,7 +776,7 @@ data_yearly_taxon_counts.to_csv(output_path_counts + 'mhhp_yearly_species_counts
 
 
 # Save the Table: yearly_species_accumulation_curves_8_groups
-data_species_cumulative0.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups.csv',sep=',',
+data_species_cumulative0_raw.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_order.csv',sep=',',
                                 index=True, index_label='Year', encoding='utf_8')
 
 
@@ -751,24 +786,30 @@ data_species_increment0.to_csv(output_path_sac +'mhhp_yearly_species_increments_
 
 
 
+# save model statistics
 
-data_species_cumulative0_aic.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_aic.csv',sep=',',
+
+# Save the Table: yearly_smoothed_species_accumulation_curves_8_groups
+data_species_cumulative0_exact.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_6_groups_exact.csv',sep=',',
+                                index=True, index_label='Year', encoding='utf_8')
+
+data_species_cumulative0_aic.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_6_groups_aic.csv',sep=',',
                                 index=True, index_label='Model', encoding='utf_8')
 
 
-data_species_cumulative0_pseudoR2.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_pseudoR2.csv',sep=',',
+data_species_cumulative0_pseudoR2.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_6_groups_pseudoR2.csv',sep=',',
                                 index=True, index_label='Model', encoding='utf_8')
 
 
-data_species_cumulative0_asym.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_asym.csv',sep=',',
+data_species_cumulative0_asym.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_6_groups_asym.csv',sep=',',
                                 index=True, index_label='Model', encoding='utf_8')
 
 
-data_species_cumulative0_unseen_num.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_unseenNum.csv',sep=',',
+data_species_cumulative0_unseen_num.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_6_groups_unseenNum.csv',sep=',',
                                 index=True, index_label='Model', encoding='utf_8')
 
 
-data_species_cumulative0_complete.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_complete.csv',sep=',',
+data_species_cumulative0_complete.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_6_groups_complete.csv',sep=',',
                                 index=True, index_label='Model', encoding='utf_8')
 
 
