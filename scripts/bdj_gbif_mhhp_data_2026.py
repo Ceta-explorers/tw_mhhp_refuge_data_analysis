@@ -100,7 +100,7 @@ output_path_sac = os.path.join(output_path, 'species_accumulation_curve/')
 output_path_counts = os.path.join(output_path, 'species_counts_yearly/')
 
 for folder in [output_path, output_path_sac, output_path_counts]:
-    os.mkdirs(folder, exist_ok=True)
+    os.makedirs(folder, exist_ok=True)
     
 
 
@@ -110,13 +110,16 @@ for folder in [output_path, output_path_sac, output_path_counts]:
 # III. Data Processing & Ecological Modeling
 # =============================================================================
 
+year_min = 1994
 
+year_max = 2025
+
+int(year_max + 1)
 
 #I.Check data integrity
-content=os.listdir(input_path)
-content=sorted(content)
-os.chdir(input_path)
-
+content = os.listdir(input_path)
+content = sorted(content)
+#os.chdir(input_path)
 
 
 data_extension=pd.DataFrame([])
@@ -125,7 +128,7 @@ data_extension=pd.DataFrame([])
 for file_id in range(0,10): #range(0,len(sheet_name)-1)
 
     # 1. Detect Encoding
-    with open(content[file_id], 'rb') as f:
+    with open(os.path.join(input_path, content[file_id]), 'rb') as f:
         result = chardet.detect(f.read())
         print(result['encoding'])    
         
@@ -141,7 +144,7 @@ for file_id in range(0,10): #range(0,len(sheet_name)-1)
               encoding_name="utf-8"
 
     if file_id==0: # Make Sure that taxonID is unique
-        data_taxon=pd.read_csv(content[file_id], encoding= encoding_name)
+        data_taxon=pd.read_csv(os.path.join(input_path, content[file_id]), encoding= encoding_name)
         data_taxon=data_taxon.sort_values(by=['taxonID'])
         
         data_taxonID=data_taxon.value_counts('taxonID', sort=True)
@@ -164,7 +167,7 @@ for file_id in range(0,10): #range(0,len(sheet_name)-1)
                     break
   
     else:
-        data1_check=pd.read_csv(content[file_id], encoding= encoding_name)
+        data1_check=pd.read_csv(os.path.join(input_path, content[file_id]), encoding= encoding_name)
         # Make Sure that occurrenceID is unique
         if ('occurrenceID' in list(data1_check.columns)) and ('measurementType' not in list(data1_check.columns)):
             data_occurrenceID=data1_check.value_counts('occurrenceID', sort=True)
@@ -194,33 +197,41 @@ a2=set(data_taxonID['taxonID'].values)
 
 
 
-os.chdir(input_path)
+#os.chdir(input_path)
 
 
 
-data_yearly_taxon_counts = pd.DataFrame([],index=list(range(1994,2026,1)))
-data_yearly_occur_counts = pd.DataFrame([],index=list(range(1994,2026,1)))
+data_yearly_taxon_counts = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
+data_yearly_occur_counts = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
+data_species_cumulative0 = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
+data_species_increment0 = pd.DataFrame([],index=list(range(year_min, int(year_max + 1), 1)))
 
 
-data_species_cumulative0_complete = pd.DataFrame([],index=list(range(0,3,1)))
-data_species_cumulative0_unseen_num = pd.DataFrame([],index=list(range(0,3,1)))
-data_species_cumulative0_unseen_per = pd.DataFrame([],index=list(range(0,3,1)))
-data_species_cumulative0_unseen_per = pd.DataFrame([],index=list(range(0,3,1)))
+
+
+model_name = ["lomolino", "asymp", "michaelis-menten"]
+
+data_species_cumulative0_aic = pd.DataFrame([],index= model_name )
+data_species_cumulative0_pseudoR2 = pd.DataFrame([],index= model_name )
+data_species_cumulative0_asym =   pd.DataFrame([],index= model_name )
+data_species_cumulative0_unseen_num =  pd.DataFrame([],index= model_name )
+data_species_cumulative0_unseen_per =  pd.DataFrame([],index= model_name )
+data_species_cumulative0_complete = pd.DataFrame([],index= model_name )
+
 
 data_species_cumulative0_model = pd.DataFrame([],index=list(range(0,3,1)))
-data_species_cumulative0_aic = pd.DataFrame([],index=list(range(0,3,1)))
+
 
                                                               
-data_species_cumulative0 = pd.DataFrame([],index=list(range(1994,2026,1)))
-data_species_increment0 = pd.DataFrame([],index=list(range(1994,2026,1)))
 
 
+# To store ecological metrics for final reporting
 
 # 2. Load Data
 for file_id in range(1,10): #range(0,len(sheet_name)-1)
 
     #check the encoding format
-    with open(content[file_id], 'rb') as f:
+    with open(os.path.join(input_path, content[file_id]), 'rb') as f:
         result = chardet.detect(f.read())
         print(f"{content[file_id]} : {result['encoding']}")    
         
@@ -237,7 +248,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
               
               
 
-    data0 = pd.read_csv(content[file_id], encoding= encoding_name)
+    data0 = pd.read_csv(os.path.join(input_path, content[file_id]), encoding= encoding_name)
 
     if ('occurrenceID' in list(data0.columns)) and ('measurementType' not in list(data0.columns)):
         
@@ -280,11 +291,13 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         data_yearly_taxon_counts.loc[list(data_taxon_yearly.index), [f'{content[file_id][2:-18]}'] ] = data_taxon_yearly.loc[list(data_taxon_yearly.index)].values
         
         
-        #3-2_python.Yearly Species Accumulation Curve (sac)        
-        #species_cumulative = {y : 0 for y in range(1994,2026,1) }
+        #3-2_Python. Yearly Species Accumulation Curve (SAC)        
+        #species_cumulative = {y : 0 for y in range(year_min, int(year_max + 1), 1) }
+        
         taxon_unique_years = np.sort(data1['year'].dropna().unique())
         species_cumulative0 = {y : 0 for y in taxon_unique_years }  #累積年份的物種數量
         taxon_cumulative = data1[['name_species','year']].dropna().drop_duplicates()   
+        
         
         
         #  3-2). Sample-based accumulation curve in R scripts.
@@ -322,9 +335,9 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             y_mena3 = np.mean(y_richness3)
             TSS = np.sum( (y_richness3 -  y_mena3)**2 )
 
-            # ==========================================
-            # 5：save results to Dataframe.
-            # ==========================================
+
+            # save results to Dataframe.
+            
             sac_results = pd.DataFrame({
                 'Years': x_sites1,
                 'Richness_rand': y_richness1,
@@ -334,33 +347,51 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 'SD_exact': y_sd3
             })
             
-            print("==== 物種累積曲線計算結果 ====")
             print(sac_results.head()) # 先偷看前五筆資料
-
+            
+            
+            # ==========================================
+            # 4：Fit with different Models
+            # ==========================================
+            
             try:
                 mod1 = vegan.fitspecaccum(sp3, "lomolino")
                 coeffs1 = stats.coef(mod1)
-                AIC1 = stats.AIC(mod1)[0]
                 Asym1 = coeffs1[0]
                 xmid = coeffs1[1]
                 slope = coeffs1[2]
-                
                 fit_mod1 = mod1.rx2('fitted')
-                predict_mod1 = stats.predict(mod1, newdata = np.arange(0,50,1))
-                asym_mod1 = np.repeat(Asym1, len(fit_mod1), axis=0)
                 #res_mod1 = mod1.rx2('residuals')
                 
+                
+                AIC1 = stats.AIC(mod1)[0]
                 RSS_1 = np.sum( (y_richness3 - fit_mod1)**2)
                 #RSS_1 = np.sum( mod1.rx2('residuals')**2)
                 Pseudo1 = 1 - (RSS_1/TSS)
+                unseen_num1 = Asym1 - fit_mod1[-1]
+                unseen_per1 = ((Asym1 - fit_mod1[-1])/Asym1)*100
+                survey_comp1 = (fit_mod1[-1]/Asym1) *100
+                
+                
+                asym_mod1 = np.repeat(Asym1, len(fit_mod1), axis=0)
+                predict_mod1 = stats.predict(mod1, newdata = np.arange(0,50,1))
                 
             except Exception as error1:
-                mod1= np.nan
-                AIC1 = 999
-                asym_mod1= 999
+                mod1 = np.nan
+                coeffs1= np.nan
+                Asym1 = np.nan
+                fit_mod1 = np.nan
                 
-                predict_mod1= [999,999]
-                fit_mod1=[999,999]
+                AIC1 = np.nan
+                RSS_1 = np.nan
+                Pseudo1 = np.nan
+                unseen_num1 = np.nan
+                unseen_per1 = np.nan
+                survey_comp1 = np.nan
+                
+                asym_mod1= np.nan
+                predict_mod1 = np.nan
+
                 print(error1)
                 print(f"The model lomolino in {content[file_id][2:-18]} fails: mod1")
 
@@ -375,8 +406,15 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 fit_mod2 = mod2.rx2('fitted')
                 predict_mod2 = stats.predict(mod2, newdata = np.arange(0,50,1))
                 asym_mod2 = np.repeat(Asym2, len(fit_mod2), axis=0)
+                
+                
                 RSS_2 = np.sum( (y_richness3 - fit_mod2)**2)
                 Pseudo2 = 1 - (RSS_2/TSS)
+                
+                unseen_num2 = Asym2 - fit_mod2[-1]
+                unseen_per2 = ((Asym2 - fit_mod2[-1])/Asym2)*100
+                survey_comp2 = (fit_mod2[-1]/Asym2) *100
+     
                 
             except Exception as error1:
                 print(error1)             
@@ -394,28 +432,135 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 asym_mod3 = np.repeat(Asym3, len(fit_mod3), axis=0)
                 RSS_3 = np.sum( (y_richness3 - fit_mod3)**2)
                 Pseudo3 = 1 - (RSS_3/TSS)
+            
+            
+                unseen_num3 = Asym3 - fit_mod3[-1]
+                unseen_per3 = ((Asym3 - fit_mod3[-1])/Asym3)*100
+                survey_comp3 = (fit_mod3[-1]/Asym3) *100
                 
             except Exception as error1:
                 print(error1)            
                 print(f"The model michaelis-menten in {content[file_id][2:-18]} fails: mod3")
 
             data_species_cumulative0_aic[f'{content[file_id][2:-18]}'] = [AIC1, AIC2, AIC3]
-            data_species_cumulative0_unseen_num[f'{content[file_id][2:-18]}'] = np.array( [fit_mod1[-1]- Asym1 , fit_mod2[-1]- Asym2, fit_mod3[-1] - Asym3])*(-1)
-            data_species_cumulative0_unseen_per[f'{content[file_id][2:-18]}'] =  np.array([(fit_mod1[-1]-Asym1)/Asym1 , (fit_mod2[-1]-Asym2)/Asym2, (fit_mod3[-1]-Asym3)/Asym3]) *(-100)
-            data_species_cumulative0_complete[f'{content[file_id][2:-18]}'] =  np.array([(fit_mod1[-1])/Asym1 , (fit_mod2[-1])/Asym2, (fit_mod3[-1])/Asym3]) *(100)
+            data_species_cumulative0_pseudoR2[f'{content[file_id][2:-18]}'] =  [Pseudo1, Pseudo2, Pseudo3]
+            data_species_cumulative0_asym[f'{content[file_id][2:-18]}'] =[Asym1, Asym2, Asym3]
+            
+            data_species_cumulative0_unseen_num[f'{content[file_id][2:-18]}'] = [unseen_num1, unseen_num2, unseen_num3]
+            data_species_cumulative0_unseen_per[f'{content[file_id][2:-18]}'] =  [unseen_per1, unseen_per2, unseen_per3]
+            data_species_cumulative0_complete[f'{content[file_id][2:-18]}'] =  [survey_comp1, survey_comp2, survey_comp3]
             
             
-            data_species_cumulative0_model['AIC'] = [AIC1, AIC2, AIC3]
-            data_species_cumulative0_model['RSS'] = [RSS_1, RSS_2, RSS_3]
-            data_species_cumulative0_model['PseudoR2'] = [Pseudo1, Pseudo2, Pseudo3]
-            data_species_cumulative0_model['coef'] =  [coeffs1, coeffs2, coeffs3]
-            data_species_cumulative0_model['Asym'] =  [Asym1, Asym2, Asym3]
-            data_species_cumulative0_model['fit'] =  [fit_mod1, fit_mod2, fit_mod3]
-            data_species_cumulative0_model['unseen_num'] = np.array( [fit_mod1[-1]- Asym1 , fit_mod2[-1]- Asym2, fit_mod3[-1] - Asym3])*(-1)
-            data_species_cumulative0_model['unseen_per'] =  np.array([(fit_mod1[-1]-Asym1)/Asym1 , (fit_mod2[-1]-Asym2)/Asym2, (fit_mod3[-1]-Asym3)/Asym3]) *(-100)
-            data_species_cumulative0_model['Completeness'] =  np.array([(fit_mod1[-1])/Asym1 , (fit_mod2[-1])/Asym2, (fit_mod3[-1])/Asym3]) *(100)
+            # data_species_cumulative0_model['AIC'] = [AIC1, AIC2, AIC3]
+            # data_species_cumulative0_model['RSS'] = [RSS_1, RSS_2, RSS_3]
+            # data_species_cumulative0_model['PseudoR2'] = [Pseudo1, Pseudo2, Pseudo3]
+            # data_species_cumulative0_model['coef'] =  [coeffs1, coeffs2, coeffs3]
+            # data_species_cumulative0_model['Asym'] =  [Asym1, Asym2, Asym3]
+            # data_species_cumulative0_model['fit'] =  [fit_mod1, fit_mod2, fit_mod3]
+            # data_species_cumulative0_model['unseen_num'] = [unseen_num1, unseen_num2, unseen_num3]
+            # data_species_cumulative0_model['unseen_per'] = [unseen_per1, unseen_per2, unseen_per3]
+            # data_species_cumulative0_model['Completeness'] = [survey_comp1, survey_comp2, survey_comp3]
+
+            
+            # ==========================================
+            # 5：check RSS and AIC
+            # ==========================================              
+            
+            models = {
+                "Lomolino": mod1,
+                "Asymp": mod2,
+                "Michaelis-Menten": mod3
+            }
+            colors = {"Lomolino": "#1A74A8", "Asymp": "blue", "Michaelis-Menten": "green"}
+
+            
+            fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(14, 12), dpi=300)
+            fig.suptitle(f'Model Fit and Residual Analysis for Species Accumulation of {content[file_id][2:-18]}', fontsize=16, fontweight='bold', y=0.95)
+            
+            max_left_y = np.max(y_richness3)
+            max_right_y = 0
+            
+
+            row = 0
+            for name, mod in models.items():
+                try:
+                    # 從 R 物件中提取「預測值」與「殘差」
+                    y_fit = np.array(mod.rx2('fitted'))
+                    coeffs = stats.coef(mod)
+                    Asym = coeffs[0]
+                    residuals = np.array(mod.rx2('residuals'))
+                    predict_mod = stats.predict(mod, newdata = np.arange(0,50,1))
+                    asym_mod = np.repeat(Asym, len(y_fit), axis=0)
+                    
+                    max_left_y = np.max([max_left_y, np.max(predict_mod), Asym])
+                    max_right_y = np.max([max_right_y, np.max(np.abs(residuals))])
+                    
+                    
+                    # --- 左側：預測曲線 vs 真實觀測值 ---
+                    ax_curve = axes[row, 0]
+                    
+                    # 畫出真實觀測的散佈點 (黑點)
+                    ax_curve.scatter(x_sites3, y_richness3, color='red', alpha=0.2, label='Observed Data', zorder=5)
+                    ax_curve.plot(x_sites3, y_richness3, color='red', alpha=0.2, marker='o', linewidth=2, label='Exact value')
+                    ax_curve.fill_between(x_sites3, 
+                                      y_richness3 - y_sd3, 
+                                      y_richness3 + y_sd3, 
+                                      color='red', alpha=0.2, label='± 1 Standard Deviation')
+
+                    # 畫出模型預測的平滑曲線 (彩線)
+                    ax_curve.plot(x_sites3, y_fit, color = colors[name], linewidth=2.5, label=f'{name} Fit')
+                    ax_curve.plot(x_sites2, y_richness2, color='black', marker='o', linewidth=3, label='Species Accumulation in Survey Order')
+                    
+                    # plot Prediction Curve
+                    ax_curve.plot(np.arange(0,50,1), predict_mod, color= colors[name], marker='', linewidth=2.5, linestyle='--', label='Model Fit of Asymp') #fit model
+                    ax_curve.plot(x_sites2, asym_mod, color= colors[name], marker='', linewidth=2.5, linestyle='-', label='The Saturation of Asymp') #fit model
             
             
+                    
+                    ax_curve.set_title(f'{name} - Fitted Curve', fontsize=12)
+                    ax_curve.set_xlabel('Years (Sampling Effort)')
+                    ax_curve.set_ylabel('Species Richness')
+                    ax_curve.legend()
+                    ax_curve.grid(True, linestyle='--', alpha=0.5)
+            
+            
+
+                    # --- 右側：殘差分佈圖 (Residual Plot) ---
+                    ax_res = axes[row, 1]
+                    # 畫出殘差點 (對應年份)
+                    ax_res.scatter(x_sites3, residuals, color=colors[name], alpha=0.7)
+                    # 畫出一條 Y=0 的完美基準線
+                    ax_res.axhline(0, color='black', linestyle='--', linewidth=1.5)
+                    # 畫出殘差點到基準線的垂直距離 (Lollipop 圖效果，視覺更清晰)
+                    ax_res.vlines(x_sites3, 0, residuals, color=colors[name], alpha=0.4)
+                    
+                    ax_res.set_title(f'{name} - Residuals of {content[file_id][2:-18]}', fontsize=12)
+                    ax_res.set_xlabel('Years (Sampling Effort)')
+                    ax_res.set_ylabel('Residuals (Observed - Predicted)')
+                    ax_res.grid(True, linestyle='--', alpha=0.5)
+                    
+                except Exception as e:
+                    # 如果某個模型在前面跑壞了 (例如算不出 NaN)，這裡會顯示空白並印出錯誤
+                    axes[row, 0].text(0.5, 0.5, f"{name} Model Failed", ha='center', fontsize=14, color='red')
+                    axes[row, 1].text(0.5, 0.5, "No Residuals", ha='center', fontsize=14, color='red')
+                    print(f"Can not plot {name}: {e}")
+                    
+                row += 1
+
+            # === 【新增】迴圈結束後，統一設定所有子圖的 Y 軸極限 ===
+            for i in range(3):
+                # 左圖 Y 軸統一：從 0 開始，上限為整體最大值的 1.05 倍 (保留 5% 頂部空白空間)
+                axes[i, 0].set_ylim(0, max_left_y * 1.05)
+                
+                # 右圖 Y 軸統一：以 0 為中心對稱，上下限為最大殘差絕對值的 1.1 倍 (保留 10% 空白空間)
+                # 這樣 Y=0 的基準虛線就永遠會完美落在圖表的正中央！
+                axes[i, 1].set_ylim(-max_right_y * 1.1, max_right_y * 1.1)
+                
+            plt.tight_layout(rect=[0, 0, 1, 0.93])
+            plt.show()
+            
+            fig.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_fitting_{content[file_id][2:-18]}.png')  
+
 
             
             # ==========================================
@@ -424,135 +569,97 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
     
             figr, axr = plt.subplots(1,1, figsize=(10, 6), dpi=300)
             
-            # plot curve
+            # plot curve in Random Method
             # axr.plot(x_sites1, y_richness1, color='brown', marker='o', linewidth=2, label='Species Accumulation with Permutations.')
             
-            axr2 = axr.twiny() #Plot collector data
-            axr2.plot(taxon_unique_years, y_richness2, color='black', marker='o', linewidth=3, label='Species Accumulation in Survey Order')
-            axr2.xaxis.set_major_locator(MaxNLocator(integer=True))
             
-            axr.plot(x_sites3, y_richness3, color='#1f77b4', marker='o', linewidth=3, label='Species Accumulation in Exact Mode.')
+            # Plot Collector curve on the SAME effort axis (x_exact) so they align perfectly
+            axr.plot(x_sites2, y_richness2, color='black', marker='o', linewidth=3, label='Species Accumulation in Survey Order')
             
-            axr.plot(np.arange(0,50,1), predict_mod2, color= 'purple', marker='.', linewidth=2.5, linestyle='--', label='Model Fit of Asymp') #fit model
-            axr.plot(x_sites2, asym_mod2, color= 'purple', marker='.', linewidth=2.5, linestyle='--', label='The Saturation of Asymp') #fit model
+            # plot curve in Exact Method
+            axr.plot(x_sites3, y_richness3, color='red', alpha=0.4, marker='s', linewidth=4, label='Species Accumulation of Expected Values.') 
             
-            try:
-                axr.plot(np.arange(0,50,1), predict_mod1, color= 'red', marker='.', linewidth=2.5, linestyle='--', label='Model Fit of Lomolino') #fit model
-                axr.plot(x_sites1, asym_mod1, color= 'red', marker='.', linewidth=2.5, linestyle='--', label='The Saturation of Lomolino') #fit model
-            except Exception as error2:
-                print(error2)
+            
+            
+            
+            # # plot Prediction Curve
+            axr.plot(np.arange(1, len(fit_mod2)+1, 1), stats.predict(mod2, newdata = np.arange(1, len(fit_mod2)+1, 1)) ,
+                     color= 'blue', marker='', linewidth=2, linestyle='--', label='Model Fit of Asymp') #fit model
+            
+            axr.plot(x_sites2, asym_mod2, color= 'blue', marker='', linewidth=2.5, linestyle='-', label='The Saturation of Asymp') #fit model
+            
+            # try:
+            #     axr.plot(np.arange(0,50,1), predict_mod1, color= 'red', marker='', linewidth=2.5, linestyle='--', label='Model Fit of Lomolino') #fit model
+            #     axr.plot(x_sites1, asym_mod1, color= '#1A74A8', marker='', linewidth=2.5, linestyle='-', label='The Saturation of Lomolino') #fit model
+            # except Exception as error2:
+            #     print(error2)
                   
            
-            axr.plot(np.arange(0,50,1), predict_mod3, color= 'blue', marker='.', linewidth=2.5, linestyle='--', label='Model Fit of Michaelis-Menten') #fit model
-            axr.plot(x_sites3, asym_mod3, color= 'blue', marker='.', linewidth=2.5, linestyle='--', label='The Saturation of Michaelis-Menten') #fit model
+            # axr.plot(np.arange(0,50,1), predict_mod3, color= 'blue', marker='', linewidth=2.5, linestyle='--', label='Model Fit of Michaelis-Menten') #fit model
+            # axr.plot(x_sites3, asym_mod3, color= 'green', marker='', linewidth=2.5, linestyle='-', label='The Saturation of Michaelis-Menten') #fit model
+            
+            
             
             # dark blue: #154A89, # dark green: #30748A, light blue: #1f77b4
             
+            # Plot Confidence Interval
             # plot confidence range of Permutations method.
             # axr.fill_between(x_sites1, 
-            #                  y_richness1 - y_sd1, 
-            #                  y_richness1 + y_sd1, 
-            #                  color='red', alpha=0.2, label='± 1 Standard Deviation')
+            #                  y_richness1 - 2*y_sd1, 
+            #                  y_richness1 + 2*y_sd1, 
+            #                  color='#1f77b4', alpha=0.2, label='± 2 Standard Deviation')
             
             # plot confidence range of Exact method.
             axr.fill_between(x_sites3, 
-                              y_richness3 - y_sd3, 
-                              y_richness3 + y_sd3, 
-                              color='#1f77b4', alpha=0.2, label='± 1 Standard Deviation')
+                              y_richness3 - 2*y_sd3, 
+                              y_richness3 + 2*y_sd3, 
+                              color='red', alpha=0.2, label='± 2 Standard Deviation')
             
-
-            axr.set_title(f'The Species Accumulation Curve of {content[file_id][2:-18]}', fontsize=14)
+            
+            #axr.xaxis.set_major_locator(MaxNLocator(integer = True))
+            axr.set_xticks(x_sites3)
+            axr.set_xticklabels(x_sites3, fontsize=15)
+            axr.set_title(f'The Species Accumulation Curve of {content[file_id][2:-18]}', fontsize=14, pad= 20)
             axr.set_xlabel('Number of Sampling Years', fontsize=12)
-            axr.set_ylabel('Cumulative Counts of Species', fontsize=12)
+            axr.set_ylabel(f'Cumulative Species Counts of {content[file_id][2:-18]}', fontsize=15)
+            
+            
+            # Axis 2 (Top X-axis): Actual Survey Year Labels
+            axr2 = axr.twiny() 
+            # Step 1: Force axr2 to share the exact same axis limits as ax1
+            axr2.set_xlim(axr.get_xlim())
+            
+            # Step 2: Set the tick positions to match the exact effort numbers (1, 2, 3...)
+            axr2.set_xticks(x_sites2)            
+            
+            # Step 3: Replace the tick numbers with the actual string of the survey years
+            axr2.set_xticklabels([str(int(yr)) for yr in taxon_unique_years], rotation= 50, fontsize=15)
+            # Configure top axis (axr2)
+            axr2.set_xlabel('Actual Survey Year', fontsize=12, labelpad= 2)
+            
             
             # set axis as integer.
-            plt.gca().xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+            #plt.gca().xaxis.set_major_locator(plt.MaxNLocator(integer=True))
             plt.gca().yaxis.set_major_locator(plt.MaxNLocator(integer=True))
             
             # set legend
             plt.grid(True, linestyle='--', alpha=0.6)
-            plt.legend(loc='lower right')
+            axr.tick_params(axis='y', labelsize=15)
+            axr.legend(loc='lower right')
             plt.show()
             plt.tight_layout()
             
-            figr.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_models_{content[file_id][2:-18]}.png')     
+            figr.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_complete_{content[file_id][2:-18]}.png')     
             
             
-            # ==========================================
-            # 6：check RSS and AIC
-            # ==========================================              
-            
-            # models = {
-            #     "Lomolino": mod1,
-            #     "Asymp": mod2,
-            #     "Michaelis-Menten": mod3
-            # }
-            # colors = {"Lomolino": "red", "Asymp": "blue", "Michaelis-Menten": "green"}
-
-            
-            # fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(14, 12), dpi=300)
-            # fig.suptitle(f'Model Fit and Residual Analysis for Species Accumulation of {content[file_id][2:-18]}', fontsize=16, fontweight='bold', y=0.95)
-
-
-            # row = 0
-            # for name, mod in models.items():
-            #     try:
-            #         # 從 R 物件中提取「預測值」與「殘差」
-            #         y_fit = np.array(mod.rx2('fitted'))
-            #         residuals = np.array(mod.rx2('residuals'))
-                    
-            #         # --- 左側：預測曲線 vs 真實觀測值 ---
-            #         ax_curve = axes[row, 0]
-            #         # 畫出真實觀測的散佈點 (黑點)
-            #         ax_curve.scatter(x_sites3, y_richness3, color='black', label='Observed Data', zorder=5)
-            #         # 畫出模型預測的平滑曲線 (彩線)
-            #         ax_curve.plot(x_sites3, y_fit, color=colors[name], linewidth=2.5, label=f'{name} Fit')
-            #         ax_curve.plot(x_sites3, y_richness3, color='black', marker='o', linewidth=2, label=f'Exact value')
-                    
-            #         ax_curve.set_title(f'{name} - Fitted Curve', fontsize=12)
-            #         ax_curve.set_xlabel('Years (Sampling Effort)')
-            #         ax_curve.set_ylabel('Species Richness')
-            #         ax_curve.legend()
-            #         ax_curve.grid(True, linestyle='--', alpha=0.5)
-
-            #         # --- 右側：殘差分佈圖 (Residual Plot) ---
-            #         ax_res = axes[row, 1]
-            #         # 畫出殘差點 (對應年份)
-            #         ax_res.scatter(x_sites3, residuals, color=colors[name], alpha=0.7)
-            #         # 畫出一條 Y=0 的完美基準線
-            #         ax_res.axhline(0, color='black', linestyle='--', linewidth=1.5)
-            #         # 畫出殘差點到基準線的垂直距離 (Lollipop 圖效果，視覺更清晰)
-            #         ax_res.vlines(x_sites3, 0, residuals, color=colors[name], alpha=0.4)
-                    
-            #         ax_res.set_title(f'{name} - Residuals of {content[file_id][2:-18]}', fontsize=12)
-            #         ax_res.set_xlabel('Years (Sampling Effort)')
-            #         ax_res.set_ylabel('Residuals (Observed - Predicted)')
-            #         ax_res.grid(True, linestyle='--', alpha=0.5)
-                    
-            #     except Exception as e:
-            #         # 如果某個模型在前面跑壞了 (例如算不出 NaN)，這裡會顯示空白並印出錯誤
-            #         axes[row, 0].text(0.5, 0.5, f"{name} Model Failed", ha='center', fontsize=14, color='red')
-            #         axes[row, 1].text(0.5, 0.5, "No Residuals", ha='center', fontsize=14, color='red')
-            #         print(f"無法繪製 {name}: {e}")
-                    
-            #     row += 1
-            # plt.tight_layout(rect=[0, 0, 1, 0.93])
-            # plt.show()
-            # fig.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_residual_{content[file_id][2:-18]}.png')  
-
-
-
-
-        
-
-     
 
 
 
         #3-2_python: 計算當年份之前(包含)的物種數量
-        #beforeyear=2025
+        
         taxon_sample_yearly_times = {} #單一年份的物種數量
-    
+        #beforeyear=2025
+        
         for beforeyear in taxon_unique_years:   #np.array(data1['year'].unique())
             # taxon_beforeyear=taxon_cumulative.loc[taxon_cumulative['year']<=beforeyear,'name_species'].value_counts()
             # len(taxon_beforeyear)      
@@ -580,7 +687,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         
         
         
-        # From 1994-2025
+        # From year_min To year_max (1994-2025)
         data_species_cumulative0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{content[file_id][2:-18]}'])
         data_species_increment0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
         # data_species_cumulative0.plot()
@@ -641,6 +748,28 @@ data_species_cumulative0.to_csv(output_path_sac +'mhhp_yearly_species_accumulati
 # Save the Table: yearly_species_counts_increments_8_groups  
 data_species_increment0.to_csv(output_path_sac +'mhhp_yearly_species_increments_8_groups.csv',sep=',',
                                index=True, index_label='Year', encoding='utf_8')
+
+
+
+
+data_species_cumulative0_aic.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_aic.csv',sep=',',
+                                index=True, index_label='Model', encoding='utf_8')
+
+
+data_species_cumulative0_pseudoR2.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_pseudoR2.csv',sep=',',
+                                index=True, index_label='Model', encoding='utf_8')
+
+
+data_species_cumulative0_asym.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_asym.csv',sep=',',
+                                index=True, index_label='Model', encoding='utf_8')
+
+
+data_species_cumulative0_unseen_num.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_unseenNum.csv',sep=',',
+                                index=True, index_label='Model', encoding='utf_8')
+
+
+data_species_cumulative0_complete.to_csv(output_path_sac +'mhhp_yearly_species_accumulation_8_groups_complete.csv',sep=',',
+                                index=True, index_label='Model', encoding='utf_8')
 
 
 
@@ -757,8 +886,8 @@ for category1 in [
     axis1[row1,column1].set_xlabel('Year', fontsize=20)
     axis1[row1,column1].set_ylabel(ylabel_name, fontsize=20)
     
-    axis1[row1,column1].set_xticks(range(1995,2026,5))
-    axis1[row1,column1].set_xticklabels(range(1995,2026,5) ,fontsize=20)
+    axis1[row1,column1].set_xticks(range(1995, int(year_max + 1), 5))
+    axis1[row1,column1].set_xticklabels(range(1995, int(year_max + 1), 5) ,fontsize=20)
     
     turn=turn+1
 
@@ -810,8 +939,8 @@ for category2 in [
     axis2.set_xlabel('Year', fontsize=15)
     axis2.set_ylabel(ylabel_name, fontsize=15)
     
-    axis2.set_xticks(range(1995,2026,5))
-    axis2.set_xticklabels(range(1995,2026,5) ,fontsize=15)
+    axis2.set_xticks(range(1995, int(year_max + 1), 5))
+    axis2.set_xticklabels(range(1995, int(year_max + 1), 5) ,fontsize=15)
     
     axis2.tick_params(axis='y', labelsize=15)
 
