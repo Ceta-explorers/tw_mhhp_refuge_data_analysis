@@ -604,7 +604,9 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 "Asymp": mod2,
                 "Michaelis-Menten": mod3
             }
-            colors = {"Lomolino": "#1A74A8", "Asymp": "blue", "Michaelis-Menten": "green"}
+            colors = {"Lomolino": "purple", "Asymp": "blue", "Michaelis-Menten": "green"}
+            
+            # "Lomolino": "#1A74A8"
 
             
             fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(14, 12), dpi=300)
@@ -617,7 +619,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             row = 0
             for name, mod in models.items():
                 try:
-                    # 從 R 物件中提取「預測值」與「殘差」
+                    # extract values in R objects
                     y_fit = np.array(mod.rx2('fitted'))
                     coeffs = stats.coef(mod)
                     Asym = coeffs[0]
@@ -629,18 +631,18 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                     max_right_y = np.max([max_right_y, np.max(np.abs(residuals))])
                     
                     
-                    # --- 左側：預測曲線 vs 真實觀測值 ---
+                    # --- Left： Prediction ---
                     ax_curve = axes[row, 0]
                     
-                    # 畫出真實觀測的散佈點 (黑點)
+                    # plot collector curve (black points)
                     ax_curve.plot(x_sites2, y_richness2, color='black', marker='o', linewidth=3, label='Species Accumulation in Survey Order')
                     #ax_curve.scatter(x_sites3, y_richness3, color='red', alpha=0.2, label='Species Rarefaction of Expected Values', zorder=5)
                     ax_curve.plot(x_sites3, y_richness3, color='red', alpha=0.2, marker='s', linewidth=2, label= 'Species Rarefaction of Expected Values')
                     
                     ax_curve.fill_between(x_sites3, 
-                                      y_richness3 - y_sd3, 
-                                      y_richness3 + y_sd3, 
-                                      color='red', alpha=0.2, label='± 1 Standard Deviation')
+                                      y_richness3 - 2*y_sd3, 
+                                      y_richness3 + 2*y_sd3, 
+                                      color='red', alpha=0.2, label='± 2 Standard Deviation')
                     
                     
                     # plot Prediction Curve with different color
@@ -659,13 +661,13 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             
             
 
-                    # --- 右側：殘差分佈圖 (Residual Plot) ---
+                    # --- Right：(Residual Plot) ---
                     ax_res = axes[row, 1]
-                    # 畫出殘差點 (對應年份)
+                    # Residual Plot
                     ax_res.scatter(x_sites3, residuals, color=colors[name], alpha=0.7)
-                    # 畫出一條 Y=0 的完美基準線
+                    # Plot:  Y=0 
                     ax_res.axhline(0, color='black', linestyle='--', linewidth=1.5)
-                    # 畫出殘差點到基準線的垂直距離 (Lollipop 圖效果，視覺更清晰)
+                    # (Lollipop Residual Plot)
                     ax_res.vlines(x_sites3, 0, residuals, color=colors[name], alpha=0.4)
                     
                     ax_res.set_title(f'{name} - Residuals of {content[file_id][2:-18]}', fontsize=12)
@@ -674,14 +676,14 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                     ax_res.grid(True, linestyle='--', alpha=0.5)
                     
                 except Exception as e:
-                    # 如果某個模型在前面跑壞了 (例如算不出 NaN)，這裡會顯示空白並印出錯誤
+                    # error
                     axes[row, 0].text(0.5, 0.5, f"{name} Model Failed", ha='center', fontsize=14, color='red')
                     axes[row, 1].text(0.5, 0.5, "No Residuals", ha='center', fontsize=14, color='red')
                     print(f"Can not plot {name}: {e}")
                     
                 row += 1
 
-            # === 【新增】迴圈結束後，統一設定所有子圖的 Y 軸極限 ===
+            # === After loop，set Y Limit ===
             for i in range(3):
                 # 左圖 Y 軸統一：從 0 開始，上限為整體最大值的 1.05 倍 (保留 5% 頂部空白空間)
                 axes[i, 0].set_ylim(0, max_left_y * 1.05)
