@@ -53,41 +53,78 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
+import sys
+
+
+
+
 # =============================================================================
 # I. R Environment Setup (rpy2)
 # =============================================================================
 
 # 1. Create the folder path for R.
 
-os.environ['R_HOME'] = r'C:\Users\cetae\anaconda3\envs\env_geo\Lib\R'
+# find the path of the environment
+conda_prefix = sys.prefix
+
+if os.name =='nt':
+    r_path = os.path.join(conda_prefix, 'Lib', 'R' )
+else:
+    r_path = os.path.join(conda_prefix, 'lib', 'R' )
+os.environ['R_HOME'] = r_path
+#os.environ['R_HOME'] = r'C:\Users\cetae\anaconda3\envs\env_geo\Lib\R'
+
+
 
 # 2. delete variable of 'R_USER' 
 if 'R_USER' in os.environ:
     del os.environ['R_USER']
-import rpy2.robjects.packages as rpackages
-from rpy2.robjects import pandas2ri
-
-# 3).Convert from pandas to R
+    
+# R Environment Setup (rpy2)
+try:
+    import rpy2.robjects.packages as rpackages
+    from rpy2.robjects import pandas2ri
+except Exception as error_env:
+    print('can not import rpy2')
+    print("Make sure to run:  `conda env create -f environment.yml` and activate the envirionment.")
+    print(f'Please reaad the error {error_env}')
+    sys.exit(1)
+    
 pandas2ri.activate()
         
-# 4). import R 'vegan' package
-base = rpackages.importr('base')
-vegan = rpackages.importr('vegan')
-stats = rpackages.importr('stats')
 
+# 4). import R packages
+try:
+    base = rpackages.importr('base')
+    vegan = rpackages.importr('vegan')
+    stats = rpackages.importr('stats')
+except Exception as error_import:
+    print('can not import R packages')
+    print("Make sure you installed `r-vegan` or run the R script `install.R`" )
+    print(f'Please reaad the error {error_import}')
+    sys.exit(1)
+
+
+
+# =============================================================================
+# II. Path Management and set the fontname of figures
+# =============================================================================
 
 matplotlib.rcParams['font.family'] = 'Times New Roman'
 
 
-# =============================================================================
-# II. Path Management
-# =============================================================================
+# Returns the absolute directory of the active script and parent directory
+try:
+    script_dir = os.path.abspath(__file__)
+    scipt_folder = os.path.abspath(os.path.join(script_dir ,'..'))
+except: # Jupyter 
+    scipt_folder = os.getcwd()
+    
 
-print(f" Current Working Directory (CWD) : {os.getcwd()}")
-root_path0 = input("Input the complete path of the folder 'Survey_Data_Mianhua_and_Huaping_Islets_Wildlife_Refuge' if the CWD is not this \n or Enter:")  or str(os.getcwd()) 
-root_path = root_path0.strip()
-if (root_path[-1] == '/'):
-    root_path = root_path[:-1]
+#parent directory
+root_path = os.path.abspath(os.path.join(scipt_folder, '..'))
+print(f'root_path is `{root_path}`')
+
 
 #example
 #root_path = 'C:/Users/cetae/GBIF_IPT/Survey_Data_Mianhua_and_Huaping_Islets_Wildlife_Refuge'
@@ -98,6 +135,7 @@ output_path = os.path.join(root_path, 'mhhp_outputs/')
 #output_path_csv = os.path.join(output_path, 'csv/')
 output_path_sac = os.path.join(output_path, 'species_accumulation_curve/')
 output_path_counts = os.path.join(output_path, 'species_counts_yearly/')
+
 
 for folder in [output_path, output_path_sac, output_path_counts]:
     os.makedirs(folder, exist_ok=True)
@@ -240,11 +278,13 @@ data_species_cumulative0_fit_value = pd.DataFrame([])
 
 # 2. Load Data
 for file_id in range(1,10): #range(0,len(sheet_name)-1)
-
+    file_name = content[file_id]
+    taxon_group_name = file_name.split('_')[1]
+    
     #check the encoding format
     with open(os.path.join(input_path, content[file_id]), 'rb') as f:
         result = chardet.detect(f.read())
-        print(f"{content[file_id]} : {result['encoding']}")    
+        print(f"{file_name} : {result['encoding']}")    
         
         if (result['encoding']=='Big5'):
               encoding_name='cp950'
@@ -298,8 +338,8 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         #3-1. Annual Species Counts
         data_taxon_yearly = data1.groupby(['year'])['name_species'].nunique(dropna=True).to_frame()
         # X axis is Years.
-        #data_yearly_taxon_counts[f'{content[file_id][2:-18]}']=0   #index是年分，匯入總整理資料
-        data_yearly_taxon_counts.loc[list(data_taxon_yearly.index), [f'{content[file_id][2:-18]}'] ] = data_taxon_yearly.loc[list(data_taxon_yearly.index)].values
+        #data_yearly_taxon_counts[f'{taxon_group_name}']=0   #index是年分，匯入總整理資料
+        data_yearly_taxon_counts.loc[list(data_taxon_yearly.index), [f'{taxon_group_name}'] ] = data_taxon_yearly.loc[list(data_taxon_yearly.index)].values
         
         
         #3-2_Python. Yearly Species Accumulation Curve (SAC)        
@@ -382,11 +422,11 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 
 
             
-            data_species_cumulative0_raw[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0_raw , orient='index',columns=[f'{content[file_id][2:-18]}'])
-            data_species_cumulative0_exact_value[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0_exact_value, orient='index', columns=[f'{content[file_id][2:-18]}'])  
-            data_species_cumulative0_exact_std[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0_exact_std, orient='index', columns=[f'{content[file_id][2:-18]}']) 
+            data_species_cumulative0_raw[f'{taxon_group_name}'] = pd.DataFrame.from_dict(species_cumulative0_raw , orient='index',columns=[f'{taxon_group_name}'])
+            data_species_cumulative0_exact_value[f'{taxon_group_name}'] = pd.DataFrame.from_dict(species_cumulative0_exact_value, orient='index', columns=[f'{taxon_group_name}'])  
+            data_species_cumulative0_exact_std[f'{taxon_group_name}'] = pd.DataFrame.from_dict(species_cumulative0_exact_std, orient='index', columns=[f'{taxon_group_name}']) 
             
-            data_species_increment0_exact[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
+            data_species_increment0_exact[f'{taxon_group_name}'] = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{taxon_group_name}'])  
             
 
 
@@ -435,7 +475,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 predict_mod1 = np.nan
 
                 print(error1)
-                print(f"The model lomolino in {content[file_id][2:-18]} fails: mod1")
+                print(f"The model lomolino in {taxon_group_name} fails: mod1")
 
             try:
                 mod2 = vegan.fitspecaccum(sp3, "asymp")
@@ -460,7 +500,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 
             except Exception as error1:
                 print(error1)             
-                print(f"The model asymp in {content[file_id][2:-18]} fails: mod2")
+                print(f"The model asymp in {taxon_group_name} fails: mod2")
                 
             try:
                 mod3 = vegan.fitspecaccum(sp3, "michaelis-menten")
@@ -482,15 +522,15 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 
             except Exception as error1:
                 print(error1)            
-                print(f"The model michaelis-menten in {content[file_id][2:-18]} fails: mod3")
+                print(f"The model michaelis-menten in {taxon_group_name} fails: mod3")
 
-            data_species_cumulative0_aic[f'{content[file_id][2:-18]}'] = [AIC1, AIC2, AIC3]
-            data_species_cumulative0_pseudoR2[f'{content[file_id][2:-18]}'] =  [Pseudo1, Pseudo2, Pseudo3]
-            data_species_cumulative0_asym[f'{content[file_id][2:-18]}'] =[Asym1, Asym2, Asym3]
+            data_species_cumulative0_aic[f'{taxon_group_name}'] = [AIC1, AIC2, AIC3]
+            data_species_cumulative0_pseudoR2[f'{taxon_group_name}'] =  [Pseudo1, Pseudo2, Pseudo3]
+            data_species_cumulative0_asym[f'{taxon_group_name}'] =[Asym1, Asym2, Asym3]
             
-            data_species_cumulative0_unseen_num[f'{content[file_id][2:-18]}'] = [unseen_num1, unseen_num2, unseen_num3]
-            data_species_cumulative0_unseen_per[f'{content[file_id][2:-18]}'] =  [unseen_per1, unseen_per2, unseen_per3]
-            data_species_cumulative0_complete[f'{content[file_id][2:-18]}'] =  [survey_comp1, survey_comp2, survey_comp3]
+            data_species_cumulative0_unseen_num[f'{taxon_group_name}'] = [unseen_num1, unseen_num2, unseen_num3]
+            data_species_cumulative0_unseen_per[f'{taxon_group_name}'] =  [unseen_per1, unseen_per2, unseen_per3]
+            data_species_cumulative0_complete[f'{taxon_group_name}'] =  [survey_comp1, survey_comp2, survey_comp3]
             
             
 
@@ -509,7 +549,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             colors = {"Lomolino": "purple", "Asymp": "blue", "Michaelis-Menten": "green"}
 
             figfit, axfit = plt.subplots(nrows=1, ncols=1, figsize=(9.6, 6.4), dpi=500)
-            #figfit.suptitle(f'Model Fit for the Species Accumulation Curve of {content[file_id][2:-18]}', fontsize=16, fontweight='bold', y=0.95)
+            #figfit.suptitle(f'Model Fit for the Species Accumulation Curve of {taxon_group_name}', fontsize=16, fontweight='bold', y=0.95)
             
             max_left_y = np.max(y_richness3)
             max_right_y = 0
@@ -551,27 +591,27 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                     ax_curve.plot(np.arange(1, num_predict+1, 1), predict_mod, color= colors[name], marker='', linewidth=2.5, linestyle='--', label= f'{name} Fit')
                     
                     #save fitting value
-                    data_species_cumulative0_fit_value[f'{content[file_id][2:-18]}_{name}'] = predict_mod
+                    data_species_cumulative0_fit_value[f'{taxon_group_name}_{name}'] = predict_mod
                     
                     #fit asymtptoc line
                     #ax_curve.plot(np.arange(1, num_asym+1, 1), asym_mod, color= colors[name], marker='', linewidth=2.5, linestyle='-' ) 
 
 
-                    #ax_curve.set_title(f'{name} - Fitted Curve of {content[file_id][2:-18]}', fontsize=12)
+                    #ax_curve.set_title(f'{name} - Fitted Curve of {taxon_group_name}', fontsize=12)
                     ax_curve.set_xlabel('Number of Sampling Year', fontsize=20)
                     ax_curve.set_ylabel('Cumulative Species Counts', fontsize=20)
                                         
-                    #ax_curve.legend(title=f'{content[file_id][2:-18]}', title_fontsize= 25 , prop={'size':17} )
+                    #ax_curve.legend(title=f'{taxon_group_name}', title_fontsize= 25 , prop={'size':17} )
                     
 
-                    if 'Avian' in f'{content[file_id][2:-18]}':
-                        ax_curve.legend(title=f'{content[file_id][2:-18]}', loc='lower right' ,title_fontsize= 25 , prop={'size':17})
+                    if 'Avian' in f'{taxon_group_name}':
+                        ax_curve.legend(title=f'{taxon_group_name}', loc='lower right' ,title_fontsize= 25 , prop={'size':17})
                         
                     else:
-                        ax_curve.legend([f'{content[file_id][2:-18]}'], loc='lower right' , fontsize= 25 )
+                        ax_curve.legend([f'{taxon_group_name}'], loc='lower right' , fontsize= 25 )
 
                 except Exception as e:
-                    data_species_cumulative0_fit_value[f'{content[file_id][2:-18]}_{name}'] = np.nan 
+                    data_species_cumulative0_fit_value[f'{taxon_group_name}_{name}'] = np.nan 
                     # If the model fails
                     print(f"Can not plot {name}: {e}")
                     
@@ -590,7 +630,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             plt.show()
             
             
-            figfit.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_model_{content[file_id][2:-18]}.png',
+            figfit.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_model_{taxon_group_name}.png',
                            dpi= 500)  
 
 
@@ -610,7 +650,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 
             
             fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(14, 12), dpi=300)
-            fig.suptitle(f'Model Fit and Residual Analysis for Species Accumulation of {content[file_id][2:-18]}', fontsize=16, fontweight='bold', y=0.95)
+            fig.suptitle(f'Model Fit and Residual Analysis for Species Accumulation of {taxon_group_name}', fontsize=16, fontweight='bold', y=0.95)
             
             max_left_y = np.max(y_richness3)
             max_right_y = 0
@@ -670,7 +710,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                     # (Lollipop Residual Plot)
                     ax_res.vlines(x_sites3, 0, residuals, color=colors[name], alpha=0.4)
                     
-                    ax_res.set_title(f'{name} - Residuals of {content[file_id][2:-18]}', fontsize=12)
+                    ax_res.set_title(f'{name} - Residuals of {taxon_group_name}', fontsize=12)
                     ax_res.set_xlabel('Years (Sampling Effort)')
                     ax_res.set_ylabel('Residuals (Observed - Predicted)')
                     ax_res.grid(True, linestyle='--', alpha=0.5)
@@ -695,7 +735,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             plt.tight_layout(rect=[0, 0, 1, 0.93])
             plt.show()
             
-            fig.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_fitting_{content[file_id][2:-18]}.png')  
+            fig.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_fitting_{taxon_group_name}.png')  
 
 
             
@@ -761,10 +801,10 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             axr.set_xticklabels([str(int(yr)) for yr in taxon_unique_years], rotation= 50, fontsize=15)
             
             
-            #axr.set_title(f'The Species Accumulation Curve of {content[file_id][2:-18]}', fontsize=14, pad= 20)
+            #axr.set_title(f'The Species Accumulation Curve of {taxon_group_name}', fontsize=14, pad= 20)
             axr.set_xlabel('Actual Survey Year', fontsize=14, labelpad= 10)
 
-            axr.set_ylabel(f'Cumulative Species Counts of {content[file_id][2:-18]}', fontsize=15)
+            axr.set_ylabel(f'Cumulative Species Counts of {taxon_group_name}', fontsize=15)
             
             
             # Axis 2 (Top X-axis): Actual Survey Year Labels
@@ -789,28 +829,22 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             # set legend
             #plt.grid(True, linestyle='--', alpha=0.6)
             axr.tick_params(axis='y', labelsize=15)
-            #axr.legend(title=f'{content[file_id][2:-18]}', loc='lower right' , fontsize=9 )
+            #axr.legend(title=f'{taxon_group_name}', loc='lower right' , fontsize=9 )
             
-            if 'Avian' in f'{content[file_id][2:-18]}':
-                axr.legend(title=f'{content[file_id][2:-18]}', loc='lower right' ,title_fontsize= 25 , prop={'size':17})
+            if 'Avian' in f'{taxon_group_name}':
+                axr.legend(title=f'{taxon_group_name}', loc='lower right' ,title_fontsize= 25 , prop={'size':17})
                 
             else:
-                axr.legend([f'{content[file_id][2:-18]}'], loc='lower right' , fontsize= 25 )
+                axr.legend([f'{taxon_group_name}'], loc='lower right' , fontsize= 25 )
                 
             
             plt.tight_layout(rect=[0, 0, 1, 0.93])
             plt.show()
-            figr.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_complete_{content[file_id][2:-18]}.png',
+            figr.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_complete_{taxon_group_name}.png',
                          dpi= 500,  pad_inches=0.1)     
             
             
-            
-            
 
-            
-            
-
-    
 # =============================================================================
 #     #3-2_python: calculate number of species before "beforeyear" of 8 Groups
 #         
@@ -838,10 +872,10 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 #                 species_increment0[y] = species_cumulative0[y] - species_cumulative0[year_previous]
 # 
 # 
-#         data_species_sample_year_cum = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{content[file_id][2:-18]}'])
-#         data_species_sample_year_incr = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
+#         data_species_sample_year_cum = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{taxon_group_name}'])
+#         data_species_sample_year_incr = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{taxon_group_name}'])  
 #         
-#         data_species_sample_year_cum.to_csv(output_path_sac + f'mhhp_yearly_species_accumulation_curve_{content[file_id][2:-18]}.csv', 
+#         data_species_sample_year_cum.to_csv(output_path_sac + f'mhhp_yearly_species_accumulation_curve_{taxon_group_name}.csv', 
 #                                                 sep=',', index=True, index_label='Year', encoding='utf_8')
 #         
 #         
@@ -851,8 +885,8 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 #         
 #         
 #         # From year_min To year_max (1994-2025)
-#         data_species_cumulative0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{content[file_id][2:-18]}'])
-#         data_species_increment0[f'{content[file_id][2:-18]}'] = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{content[file_id][2:-18]}'])  
+#         data_species_cumulative0[f'{taxon_group_name}'] = pd.DataFrame.from_dict(species_cumulative0 , orient='index',columns=[f'{taxon_group_name}'])
+#         data_species_increment0[f'{taxon_group_name}'] = pd.DataFrame.from_dict(species_increment0, orient='index', columns=[f'{taxon_group_name}'])  
 #         
 #     
 # 
@@ -861,7 +895,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 #         size_point=20 #the size of the point
 #         fig2,ax2 = plt.subplots(1,1, figsize=(6,4), dpi=300)
 #         data_species_sample_year_cum.plot(ax=ax2)
-#         ax2.scatter(x = list(data_species_sample_year_cum.index) , y = data_species_sample_year_cum[f'{content[file_id][2:-18]}'],
+#         ax2.scatter(x = list(data_species_sample_year_cum.index) , y = data_species_sample_year_cum[f'{taxon_group_name}'],
 #                           s=size_point, marker='o')
 #         
 #         ax2.set_xticks(range(0,len(data_species_sample_year_cum)))
@@ -873,9 +907,9 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 #             ax2.set_yticklabels(range(0, data_species_sample_year_cum.max().values[0]+2, 1), fontsize=15 )
 #             
 #         ax2.set_ylabel('Species Counts', fontsize=18)
-#         ax2.legend([f'{content[file_id][2:-18]}'], fontsize=20)
+#         ax2.legend([f'{taxon_group_name}'], fontsize=20)
 #         plt.tight_layout()
-#         fig2.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_{content[file_id][2:-18]}.png')        
+#         fig2.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_{taxon_group_name}.png')        
 # =============================================================================
 
 
@@ -884,16 +918,16 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 
         
         #I.計算這個種類的生物在整年份的目擊分布>>使用所有的taxon occurrences(data0)
-        data_year = data0.groupby('year')['occurrenceID'].size().to_frame(name=f'{content[file_id][2:-18]}')
+        data_year = data0.groupby('year')['occurrenceID'].size().to_frame(name=f'{taxon_group_name}')
         
         #單一物種整年份的目擊分布>>彙整至全部種類整年份的分布
-        #data_yearly_occur_counts[f'{content[file_id][2:-18]}']=0  
+        #data_yearly_occur_counts[f'{taxon_group_name}']=0  
 
         # index is years: Inset into yearly tables.
-        data_yearly_occur_counts.loc[data_year.index, f'{content[file_id][2:-18]}']=data_year.loc[data_year.index, f'{content[file_id][2:-18]}'].values
+        data_yearly_occur_counts.loc[data_year.index, f'{taxon_group_name}']=data_year.loc[data_year.index, f'{taxon_group_name}'].values
         
         # index is not years: Inset into yearly tables.
-        #data_yearly_occur_counts.loc[data_year['year'].values, f'{content[file_id][2:-18]}'] = data_year.loc[data_year['year']==data_year['year'].values, f'{content[file_id][2:-18]}'].values
+        #data_yearly_occur_counts.loc[data_year['year'].values, f'{taxon_group_name}'] = data_year.loc[data_year['year']==data_year['year'].values, f'{taxon_group_name}'].values
         
 
     else:
@@ -1035,6 +1069,8 @@ for category1 in [
     fig0.savefig(output_path_counts + f'mhhp_yearly_species_counts_{category1}.png')
 
 
+
+
 #%% 3-2.Export 1 figure of annual_species_counts_8_subplots
 
 
@@ -1139,27 +1175,6 @@ plt.tight_layout()
 fig2.savefig(output_path_sac + 'mhhp_yearly_species_accumulation_curves_6_groups.png')
 
 plt.show()
-
-
-
- 
-#%%  
-# #%% 4-1. Count the boolean of survey targets in each year (0 | 1).
-
-
-
-# # Count the number of survey targets in each year.
-# # Count the boolean of survey targets in each year (0 | 1).
-# data_year_category_group = data_yearly_occur_counts>0
-# data_year_category_group = data_year_category_group.astype('int64')
-
-# # Delete it : If there isn't any survey targets in that year.
-# data_year_category_group['sum'] = data_year_category_group.sum(axis=1).values
-# drop_index1=list(data_year_category_group[data_year_category_group['sum']==0].index)
-# data_year_category_group.drop(drop_index1, inplace=True)
-# data_year_category_group.to_csv(output_path_csv +'mhhp_yearly_occur_counts_boolean_8_groups.csv',
-#                                 sep=',',index=True, index_label='Year', encoding='utf_8')
-
 
 
 
