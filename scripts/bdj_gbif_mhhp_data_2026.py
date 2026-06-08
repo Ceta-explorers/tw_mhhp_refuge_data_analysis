@@ -96,6 +96,7 @@ pandas2ri.activate()
 # 4). import R packages
 try:
     base = rpackages.importr('base')
+    base.Sys_setlocale("LC_ALL", "English")
     vegan = rpackages.importr('vegan')
     stats = rpackages.importr('stats')
 except Exception as error_import:
@@ -535,7 +536,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             
 
                 
-            
+
 
             # ==========================================
             # 5-1：check RSS and AIC
@@ -548,8 +549,8 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             }
             colors = {"Lomolino": "purple", "Asymp": "blue", "Michaelis-Menten": "green"}
 
-            figfit, axfit = plt.subplots(nrows=1, ncols=1, figsize=(9.6, 6.4), dpi=500)
-            #figfit.suptitle(f'Model Fit for the Species Accumulation Curve of {taxon_group_name}', fontsize=16, fontweight='bold', y=0.95)
+            figfit, axfit = plt.subplots(nrows=1, ncols=1, figsize= (8.27, 5.83), dpi=300)
+            #figfit.suptitle(f'Model Fit for the Species Accumulation Curve of {taxon_group_name}', fontsize= 16, fontweight='bold', y=0.95)
             
             max_left_y = np.max(y_richness3)
             max_right_y = 0
@@ -605,10 +606,10 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                     
 
                     if 'Avian' in f'{taxon_group_name}':
-                        ax_curve.legend(title=f'{taxon_group_name}', loc='lower right' ,title_fontsize= 25 , prop={'size':17})
+                        ax_curve.legend(title=f'{taxon_group_name}', loc='lower right' ,title_fontsize= 20, prop={'size':15})
                         
                     else:
-                        ax_curve.legend([f'{taxon_group_name}'], loc='lower right' , fontsize= 25 )
+                        ax_curve.legend([f'{taxon_group_name}'], loc='lower right' , fontsize= 20 )
 
                 except Exception as e:
                     data_species_cumulative0_fit_value[f'{taxon_group_name}_{name}'] = np.nan 
@@ -624,10 +625,9 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             ax_curve.tick_params(axis='y', labelsize= 20)
             ax_curve.tick_params(axis='x', labelsize= 20)
             plt.gca().yaxis.set_major_locator(plt.MaxNLocator(integer=True))
-            plt.tight_layout(rect=[0, 0, 1, 0.93])
-            
-            #plt.tight_layout()
-            plt.show()
+            plt.tight_layout(rect= [0, 0, 1, 1] )
+
+            #plt.show()
             
             
             figfit.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_model_{taxon_group_name}.png',
@@ -649,7 +649,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             # "Lomolino": "#1A74A8"
 
             
-            fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(14, 12), dpi=300)
+            fig, axes = plt.subplots(nrows=3, ncols=2, figsize= (8.27, 11.69), dpi=300)
             fig.suptitle(f'Model Fit and Residual Analysis for Species Accumulation of {taxon_group_name}', fontsize=16, fontweight='bold', y=0.95)
             
             max_left_y = np.max(y_richness3)
@@ -665,7 +665,8 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                     Asym = coeffs[0]
                     residuals = np.array(mod.rx2('residuals'))
                     predict_mod = stats.predict(mod, newdata = np.arange(0,50,1))
-                    asym_mod = np.repeat(Asym, num_asym , axis=0)
+                    
+                    asym_mod = np.repeat(Asym, num_predict , axis=0)
                     
                     max_left_y = np.max([max_left_y, np.max(predict_mod), Asym])
                     max_right_y = np.max([max_right_y, np.max(np.abs(residuals))])
@@ -686,10 +687,10 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                     
                     
                     # plot Prediction Curve with different color
-                    ax_curve.plot(np.arange(1, num_predict+1, 1), predict_mod, color= colors[name], marker='', linewidth=2.5, linestyle='--', label='Model Fit of Asymp') #fit model
+                    ax_curve.plot(np.arange(1, num_predict+1, 1), predict_mod, color= colors[name], marker='', linewidth=2.5, linestyle='--', label=f'Model Fit of {name}') #fit model
                     
                     
-                    ax_curve.plot(np.arange(1, num_asym+1, 1), asym_mod, color= colors[name], marker='', linewidth=2.5, linestyle='-', label='The Saturation of Asymp') #fit model
+                    ax_curve.plot(np.arange(1, num_predict+1, 1), asym_mod, color= colors[name], marker='', linewidth=2.5, linestyle='-') # label = f'The Saturation of {name}'
             
             
                     
@@ -732,8 +733,8 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
                 # 這樣 Y=0 的基準虛線就永遠會完美落在圖表的正中央！
                 axes[i, 1].set_ylim(-max_right_y * 1.1, max_right_y * 1.1)
                 
-            plt.tight_layout(rect=[0, 0, 1, 0.93])
-            plt.show()
+            plt.tight_layout(rect= [0, 0, 1, 0.95])
+            #plt.show()
             
             fig.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_fitting_{taxon_group_name}.png')  
 
@@ -743,22 +744,22 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             # 6：Plot smoothed SAC with Matplotlib
             # ==========================================            
     
-            figr, axr = plt.subplots(1,1, figsize=(9.6, 6.4), dpi=500)
+            figr, axr = plt.subplots(1,1, figsize= (8.27, 5.83), dpi=500)
             
             # plot curve in Random Method
             # axr.plot(x_sites1, y_richness1, color='brown', marker='o', linewidth=2, label='Species Accumulation with Permutations.')
             
             
             # Plot Collector curve on the SAME effort axis (x_exact) so they align perfectly
-            axr.plot(x_sites2, y_richness2, color='black', marker='o', linewidth=3, label='Species Accumulation in Survey Order')
+            axr.plot(x_sites2, y_richness2, color= 'black', marker='o', linewidth=3, label='Species Accumulation in Survey Order')
             
             # plot curve in Exact Method
-            axr.plot(x_sites3, y_richness3, color='red', alpha=0.4, marker='s', linewidth=4, label='Species Rarefaction of Expected Values') 
+            axr.plot(x_sites3, y_richness3, color= 'red', alpha=0.4, marker='s', linewidth=4, label='Species Rarefaction of Expected Values') 
             
             
             
             
-            # # plot Prediction Curve
+            # # plot Prediction Curve with completeness.
             axr.plot(np.arange(1, len(fit_mod2)+1, 1), stats.predict(mod2, newdata = np.arange(1, len(fit_mod2)+1, 1)) ,
                      color= 'blue', marker='', linewidth=2, linestyle='--', label='Model Fit of Asymp') #fit model
             
@@ -832,14 +833,14 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
             #axr.legend(title=f'{taxon_group_name}', loc='lower right' , fontsize=9 )
             
             if 'Avian' in f'{taxon_group_name}':
-                axr.legend(title=f'{taxon_group_name}', loc='lower right' ,title_fontsize= 25 , prop={'size':17})
+                axr.legend(title=f'{taxon_group_name}', loc='lower right' ,title_fontsize= 17 , prop= {'size':14})
                 
             else:
-                axr.legend([f'{taxon_group_name}'], loc='lower right' , fontsize= 25 )
+                axr.legend([f'{taxon_group_name}'], loc='lower right' , fontsize= 17 )
                 
             
-            plt.tight_layout(rect=[0, 0, 1, 0.93])
-            plt.show()
+            plt.tight_layout(rect= [0, 0, 1, 1])
+            #plt.show()
             figr.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_complete_{taxon_group_name}.png',
                          dpi= 500,  pad_inches=0.1)     
             
@@ -908,7 +909,7 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
 #             
 #         ax2.set_ylabel('Species Counts', fontsize=18)
 #         ax2.legend([f'{taxon_group_name}'], fontsize=20)
-#         plt.tight_layout()
+#         plt.tight_layout(rect= [0, 0, 1, 1])
 #         fig2.savefig(output_path_sac + f'mhhp_yearly_species_accumulation_curve_{taxon_group_name}.png')        
 # =============================================================================
 
@@ -1063,6 +1064,10 @@ for category1 in [
     # Set the fontsize of Y label
     axis0.tick_params(axis='y',labelsize=15)
     axis0.tick_params(axis='x',labelsize=15)
+    
+    
+    
+    
     axis0.set_xlabel('Survey Year', fontsize=20)
     axis0.set_ylabel(ylabel_name, fontsize=20)
     plt.tight_layout()
@@ -1077,7 +1082,7 @@ for category1 in [
 fig_row_counts = 3
 
 
-fig1,axis1=plt.subplots(3,2, dpi=300, figsize=(16,16))
+fig1,axis1=plt.subplots(3,2, dpi=300, figsize=(11.69, 8.27))
 turn=0
 for category1 in [
 # 'Algae',
@@ -1111,11 +1116,14 @@ for category1 in [
     axis1[row1,column1].set_xticks(range(1995, int(year_max + 1), 5))
     axis1[row1,column1].set_xticklabels(range(1995, int(year_max + 1), 5) ,fontsize=20)
     
+    axis1[row1,column1].tick_params(axis='y', labelsize = 15)
+
+    
     turn=turn+1
 
 plt.tight_layout()
 fig1.savefig(output_path_counts + 'mhhp_yearly_species_counts_6subplots.png')
-plt.show()
+#plt.show()
 
 
 
@@ -1164,7 +1172,7 @@ for category2 in [
     axis2.set_ylabel('Cumulative Species Counts', fontsize=15)
     
     axis2.set_xticks(range(1995, int(year_max + 1), 5))
-    axis2.set_xticklabels(range(1995, int(year_max + 1), 5) ,fontsize=15)
+    axis2.set_xticklabels(range(1995, int(year_max + 1), 5) , fontsize=15)
     
     axis2.tick_params(axis='y', labelsize=15)
 
@@ -1174,7 +1182,7 @@ axis2.legend(frameon=False, prop={'size':11})
 plt.tight_layout()
 fig2.savefig(output_path_sac + 'mhhp_yearly_species_accumulation_curves_6_groups.png')
 
-plt.show()
+#plt.show()
 
 
 
