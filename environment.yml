@@ -1,4 +1,4 @@
-name: Survey_Data_Mianhua_and_Huaping_Islets_Wildlife_Refuge
+name: env_refuge
 channels:
   - conda-forge
   - r
@@ -6,13 +6,13 @@ channels:
 
 dependencies:
   # 1. Python Version 
-  - python=3.12.3
+  - python>=3.11,<3.13
   
   # 2.Python Packages
-  - numpy=2.4.6
-  - pandas=3.0.3
-  - chardet=5.2.0
-  - matplotlib=3.8.2
+  - numpy>=2.4.6
+  - pandas>=3.0.3
+  - chardet>=5.2
+  - matplotlib>=3.9
   - rpy2=3.5.11
 
   

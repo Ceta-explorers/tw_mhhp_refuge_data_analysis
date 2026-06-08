@@ -29,6 +29,11 @@
 
 ```
 
+## Create an environment and activate it
+run `conda env create -f environment.yml` in Conda Shell
+run `activate env_refuge`
+run `python ./scripts/bdj_gbif_mhhp_data_2026.py`
+
 ## Copyright and License
 
 * **Copyright:** Copyright (c) 2026 Jui-Wen Chang and Ceta explorers Co., Ltd.
