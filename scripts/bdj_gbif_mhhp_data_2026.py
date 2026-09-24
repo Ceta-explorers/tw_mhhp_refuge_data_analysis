@@ -164,13 +164,12 @@ content = sorted(content)
 data_extension=pd.DataFrame([])
 
 #Confirm unique ID
-for file_id in range(0,10): #range(0,len(sheet_name)-1)
+for file_id in range(0,11): #range(0,len(sheet_name)-1)
 
     # 1. Detect Encoding
     with open(os.path.join(input_path, content[file_id]), 'rb') as f:
         result = chardet.detect(f.read())
-        print(result['encoding'])    
-        
+        print(result['encoding'])           
         if (result['encoding']=='Big5'):
               encoding_name='cp950'
         elif (result['encoding']=='Windows-1252'):
@@ -209,27 +208,32 @@ for file_id in range(0,10): #range(0,len(sheet_name)-1)
         data1_check=pd.read_csv(os.path.join(input_path, content[file_id]), encoding= encoding_name)
         # Make Sure that occurrenceID is unique
         if ('occurrenceID' in list(data1_check.columns)) and ('measurementType' not in list(data1_check.columns)):
-            data_occurrenceID=data1_check.value_counts('occurrenceID', sort=True)
-            if len(data_occurrenceID)==len(data1_check):
-                data_extension=pd.concat([data_extension,data1_check], ignore_index=True)
+            data_occurrenceID = data1_check.value_counts('occurrenceID', sort=True)
+            if len(data_occurrenceID) == len(data1_check):
+                data_extension = pd.concat([data_extension, data1_check], ignore_index=True)
                 print(f'{content[file_id]}: occurrenceID is unique.')
             else:
                 print(f'{content[file_id]}: The occurrenceID is NOT unique!\n')
     
 
 
-
-
-
+# Deal with 'verbatimEventDate' to sort records
+filter_only_year = data_extension['eventDate'].str.len()==4
+data_extension['verbatimEventDate'] = data_extension['eventDate']
+data_extension.loc[filter_only_year,'verbatimEventDate'] = data_extension.loc[filter_only_year,'verbatimEventDate']+"-00-00"
 data_extension['verbatimEventDate'] = data_extension['verbatimEventDate'].str.replace('/','-')
 
 
-
-data_extension_taxon=data_extension.value_counts('taxonID', sort=True)
-data_extension_taxon=data_extension_taxon.reset_index().sort_values(by=['taxonID'])
+# Check for the unique count of `taxonID` in Taxon Table and Occur Table
+data_extension_taxon= data_extension.value_counts('taxonID', sort=True)
+data_extension_taxon= data_extension_taxon.reset_index().sort_values(by=['taxonID'])
 a1=set(data_extension_taxon['taxonID'].values)
 a2=set(data_taxonID['taxonID'].values)
 
+
+data_extension['taxonRank'].unique()
+filter_rank = data_extension['taxonRank'].isin(['kingdom', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'species' ,'subspecies', 'variety' ])
+data_extension[filter_rank]
 
 
 #%% #II. Statistics of the data
@@ -263,7 +267,6 @@ data_species_cumulative0_asym =   pd.DataFrame([],index= model_name )
 data_species_cumulative0_unseen_num =  pd.DataFrame([],index= model_name )
 data_species_cumulative0_unseen_per =  pd.DataFrame([],index= model_name )
 data_species_cumulative0_complete = pd.DataFrame([],index= model_name )
-
 data_species_cumulative0_fit_value = pd.DataFrame([])
 
 
@@ -280,7 +283,7 @@ data_species_cumulative0_fit_value = pd.DataFrame([])
 # 2. Load Data
 for file_id in range(1,10): #range(0,len(sheet_name)-1)
     file_name = content[file_id]
-    taxon_group_name = file_name.split('_')[1]
+    taxon_group_name = file_name[:-4].split('_')[1]
     
     #check the encoding format
     with open(os.path.join(input_path, content[file_id]), 'rb') as f:
@@ -307,7 +310,12 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         data0['year'] = data0['year'].astype('Int64')  #型別
         data0['month'] = data0['month'].astype('Int64')
         data0.sort_values(['year'],ascending=True, ignore_index=True, inplace=True) #將年份排序
-        data0.sort_values(['verbatimEventDate'],ascending=True, ignore_index=True, inplace=True) #將年份排序
+        
+        #將日期排序
+        filter_only_year = data0['eventDate'].str.len()==4
+        data0['verbatimEventDate'] = data0['eventDate']
+        data0.loc[filter_only_year,'verbatimEventDate'] = data0.loc[filter_only_year,'verbatimEventDate']+"-00-00"
+        data0.sort_values(['verbatimEventDate'],ascending=True, ignore_index=True, inplace=True) 
         
         # =============================================================================
         #         Goal: Filter the occurrences with taxonRank euqals species.
@@ -329,8 +337,17 @@ for file_id in range(1,10): #range(0,len(sheet_name)-1)
         
         #Assign data1 : Filter the occurrences with taxonRank euqals species.
         data0['taxonRank'] = data0['taxonRank'].str.strip().str.lower()
-        # Filter for species/subspecies level
-        filter_species= np.logical_or(data0['taxonRank']=='species', data0['taxonRank']=='subspecies')
+        data_extension['taxonRank'] = data_extension['taxonRank'].replace('varietas', 'variety')
+        
+        # Filter for species/subspecies level  # "20260921": "add variety"
+        
+        # filter_species1 = np.logical_or(data0['taxonRank']=='species', data0['taxonRank']=='subspecies')
+        # filter_species1 = np.logical_or(filter_species1, data0['taxonRank']=='variety')
+        
+        # filter_species2= ((data0['taxonRank']=='species') | (data0['taxonRank']=='subspecies') | (data0['taxonRank']=='variety'))
+        # filter_species3 = data0['taxonRank'].isin(['species', 'subspecies', 'variety'])
+        filter_species = ((data0['taxonRank']=='species') | (data0['taxonRank']=='subspecies') | (data0['taxonRank']=='variety'))
+        
         len(data0[filter_species])/len(data0)
         data1 = data0[filter_species].copy()
         
@@ -1033,7 +1050,7 @@ ylabel_name='Species Counts'
 color_category={
  'Algae':'#6ccb59',
  'Avian':'#ff9a03',
- 'Benthic Invertebrate':'#46859c',
+ 'BenthicInvertebrate':'#46859c',
  'Cetacean':'#6ccbef',
  'Fish':'#4685ff',
  'Plant':'#077148',
@@ -1041,10 +1058,14 @@ color_category={
  'Insect':'#613901'}
 
 
+data_yearly_counts_fig.columns
+['Algae', 'Avian', 'BenthicInvertebrate', 'Cetacean', 'Fish', 'Insect',
+       'Plant', 'Reptile']
+
 for category1 in [
   'Algae',
   'Avian',
-  'Benthic Invertebrate',
+  'BenthicInvertebrate',
   'Cetacean',
   'Fish',
   'Plant',
@@ -1054,7 +1075,12 @@ for category1 in [
     fig0, axis0=plt.subplots(1,1, dpi=300)
     bar0=axis0.bar(data_yearly_counts_fig.index, data_yearly_counts_fig[category1], color= color_category[category1])
     
+
+        
     #set the legend
+    if category1== 'BenthicInvertebrate':
+        category1 = 'Benthic Invertebrate'
+        
     bar0.set_label(category1)
     axis0.legend(prop = {"size":25})
 
@@ -1090,7 +1116,7 @@ for category1 in [
  'Fish',
  'Insect',
  'Cetacean',
- 'Benthic Invertebrate',
+ 'BenthicInvertebrate',
  'Plant',
 # 'Reptile'
  ]:
@@ -1103,6 +1129,8 @@ for category1 in [
     bar1=axis1[row1,column1].bar(data_yearly_counts_fig.index, data_yearly_counts_fig[category1], color=color_category[category1])
    
     #set the legend
+    if category1== 'BenthicInvertebrate':
+        category1 = 'Benthic Invertebrate'
     bar1.set_label(category1)
     axis1[row1,column1].legend(prop={"size":25})
     
@@ -1158,7 +1186,7 @@ for category2 in [
  'Fish',
  'Insect',
  'Cetacean',
- 'Benthic Invertebrate',
+ 'BenthicInvertebrate',
  'Plant',
 # 'Reptile'
  ]:
@@ -1166,6 +1194,10 @@ for category2 in [
     
     line2,= axis2.plot(data_species_cumulative_fig.index, data_species_cumulative_fig[category2],
                       color=color_category[category2], linewidth=2)
+    
+    #set the legend
+    if category2 == 'BenthicInvertebrate':
+        category2 = 'Benthic Invertebrate'    
     line2.set_label(category2)
     
     axis2.set_xlabel('Year', fontsize=15)
