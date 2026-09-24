@@ -18,7 +18,7 @@ This repository contains the Python scripts, input datasets, and output figures 
 tw_mhhp_refuge_data_analysis/
 |
 ├── scripts/              <- Directory containing Python scripts
-│   └── (e.g., bdj_gbif_mhhp_data_2026.py)
+│   └── (e.g., main.py)
 │
 ├── mhhp_inputs/          <- Directory containing the GBIF occurrence dataset
 │   └── (e.g., 2_Avian_2025_20260408.csv)
@@ -50,7 +50,7 @@ This project relies on both Python and R packages (via rpy2). You can set up the
 `conda env create -f environment.yml`<br> `conda activate env_refuge`
 
 ### 3. Run the analysis in the activated environment<br>
-`python ./scripts/bdj_gbif_mhhp_data_2026.py` <br>
+`python ./scripts/main.py` <br>
 All generated figures and analytical tables will be automatically saved in the mhhp_outputs/ directory.
 
 

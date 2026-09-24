@@ -138,9 +138,9 @@ input_path = os.path.join(root_path,'mhhp_inputs/')
 output_path = os.path.join(root_path, 'mhhp_outputs/')
 #output_path_csv = os.path.join(output_path, 'csv/')
 
-output_path_counts = os.path.join(output_path, 'species_counts_yearly/')
-output_path_sac = os.path.join(output_path, 'species_accumulation_curve/')
-output_path_model = os.path.join(output_path, 'species_accumulation_model/')
+output_path_counts = os.path.join(output_path, 'species_counts_yearly2/')
+output_path_sac = os.path.join(output_path, 'species_accumulation_curve2/')
+output_path_model = os.path.join(output_path, 'species_accumulation_model2/')
 
 
 for folder in [output_path, output_path_sac, output_path_counts, output_path_model]:
@@ -1198,10 +1198,8 @@ fig1.savefig(output_path_counts + 'mhhp_yearly_species_counts_6subplots.png')
 
 
 
-#data_species_cumulative_fig = data_species_increment0.fillna(0).cumsum().astype('int')
-
-
-data_species_cumulative_fig = data_species_increment0_exact.fillna(0).cumsum().astype('int')
+#data_species_cumulative_fig = data_species_increment0.fillna(0).cumsum().astype('int')   # raw value
+data_species_cumulative_fig = data_species_increment0_exact.fillna(0).cumsum().astype('int') # exact_value
 
 
 # data_species_cumulative_fig.columns=['year',
@@ -1249,7 +1247,7 @@ for category2 in [
 #axis2.legend(title='8 Groups',title_fontsize=12 ,prop={'size':11})
 axis2.legend(frameon=False, prop={'size':10})
 plt.tight_layout()
-fig2.savefig(output_path_sac + 'mhhp_yearly_species_accumulation_curves_6_groups.png')
+fig2.savefig(output_path_model + 'mhhp_yearly_species_accumulation_curves_6_groups_exact.png')
 
 #plt.show()
 
