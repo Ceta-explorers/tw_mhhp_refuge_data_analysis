@@ -50,7 +50,7 @@ This project relies on both Python and R packages (via rpy2). You can set up the
 `conda env create -f environment.yml`<br> `conda activate env_refuge`
 
 ### 3. Run the analysis in the activated environment<br>
-`python ./scripts/main_20261005.py` <br>
+`python scripts/main.py --ipt-version 1.37 --year-max 2025` <br>
 All generated figures and analytical tables will be automatically saved in the mhhp_outputs/ directory.
 
 
