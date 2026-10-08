@@ -24,7 +24,6 @@ tw_mhhp_refuge_data_analysis/
 │   └── species_accumulation_curve1/
 ├── environment.yml
 ├── requirements.txt
-├── install.R
 ├── LICENSE.txt
 └── README.md
 ```
@@ -34,7 +33,7 @@ tw_mhhp_refuge_data_analysis/
 - `mhhp_outputs/`: Generated figures and analytical tables.
 - `environment.yml`: Conda configuration with pinned Python and direct package versions.
 - `requirements.txt`: The same direct Python package versions for installation with pip.
-- `install.R`: R package installation instructions; not required by the supplied Python workflow.
+
 
 ## Getting started
 
