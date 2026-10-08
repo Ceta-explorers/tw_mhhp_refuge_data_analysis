@@ -15,8 +15,7 @@ import argparse
 import os
 import re
 import sys
-
-print(sys.stdin.isatty())
+#print(sys.stdin.isatty())
 
 
 # Third-party packages.
@@ -844,20 +843,31 @@ def export_summary_tables(
 ):
     """Export five summary CSVs and return a completion message.
 
-    Summary tables use Year index labels and retain NaN values. 
-    Survey-target indicators use occurrences at all ranks and omit years with no surveyed group (yearly counts).
+    The species-ratio table uses Metric; yearly tables use Year.
+    Survey-target indicators use occurrences at all ranks and omit years
+    with no surveyed group. The sum column is excluded from group counts.
+    
     """
+    
+    species_ratio_group_count = data_species_ratio.shape[1]
+    species_counts_group_count = data_annual_species_counts.shape[1]
+    species_cumulative_group_count = data_annual_species_cumulative0.shape[1]
+    species_increment_group_count = data_annual_species_increment0.shape[1]
+    survey_targets_group_count = len(
+    data_yearly_occur_boolean.columns.drop("sum", errors="ignore"))
+    
+    
     # Export species ratios and annual observed-species counts.
     data_species_ratio.to_csv(
-        output_path_counts + "mhhp_yearly_species_ratio_8_groups.csv",
+        output_path_counts + f"mhhp_yearly_species_ratio_{species_ratio_group_count}_groups.csv",
         sep=",",
         index=True,
-        index_label="Year",
+        index_label="Metric",
         encoding="utf_8",
     )
 
     data_annual_species_counts.to_csv(
-        output_path_counts + "mhhp_yearly_species_counts_8_groups.csv",
+        output_path_counts + f"mhhp_yearly_species_counts_{species_counts_group_count}_groups.csv",
         sep=",",
         index=True,
         index_label="Year",
@@ -866,7 +876,7 @@ def export_summary_tables(
 
     # Export cumulative counts and new-species increments with NaN intact.
     data_annual_species_cumulative0.to_csv(
-        output_path_sac + "mhhp_yearly_species_accumulation_8_groups_richness_raw.csv",
+        output_path_sac + f"mhhp_yearly_species_accumulation_{species_cumulative_group_count}_groups_richness_raw.csv",
         sep=",",
         index=True,
         index_label="Year",
@@ -874,7 +884,7 @@ def export_summary_tables(
     )
 
     data_annual_species_increment0.to_csv(
-        output_path_sac + "mhhp_yearly_species_increments_8_groups_richness.csv",
+        output_path_sac + f"mhhp_yearly_species_increments_{species_increment_group_count}_groups_richness.csv",
         sep=",",
         index=True,
         index_label="Year",
@@ -883,7 +893,7 @@ def export_summary_tables(
 
     # A positive occurrence count marks a surveyed group for that year (0 | 1).
     data_yearly_occur_boolean.to_csv(
-        output_path_counts + "mhhp_yearly_survey_targets_boolean_8_groups.csv",
+        output_path_counts + f"mhhp_yearly_survey_targets_boolean_{survey_targets_group_count}_groups.csv",
         sep=",",
         index=True,
         index_label="Year",
